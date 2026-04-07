@@ -1,0 +1,25 @@
+changelog:
+  categories:
+    - title: Core Pipeline
+      labels:
+        - core
+        - pipeline
+    - title: Benchmarking
+      labels:
+        - benchmark
+        - evaluation
+    - title: Providers
+      labels:
+        - provider
+        - model
+    - title: Documentation
+      labels:
+        - documentation
+        - docs
+    - title: Tooling And CI
+      labels:
+        - tooling
+        - ci
+    - title: Other Changes
+      labels:
+        - "*"
