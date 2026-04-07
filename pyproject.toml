@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "no-watermar"
+version = "0.2.0"
+description = "Local-first batch watermark removal and restoration framework."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "no-watermar contributors" }
+]
+dependencies = [
+  "numpy>=2.0",
+  "Pillow>=10.0",
+  "opencv-python-headless>=4.13"
+]
+
+[project.optional-dependencies]
+benchmark = []
+dev = []
+
+[project.scripts]
+no-watermar = "no_watermar.cli:main"
+no-watermar-benchmark = "no_watermar.benchmark_cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

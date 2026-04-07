@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Environments
+.venv/
+.env
+.venvs/
+venv/
+env/
+.conda/
+
+# Local inputs and outputs
+/inputs/*
+!/inputs/.gitkeep
+/runtime/*
+!/runtime/README.md
+/benchmarks/*
+!/benchmarks/README.md
+
+# Local model assets
+/models/
+/checkpoints/
+/weights/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+/no-watermar.toml
+
+# Local temp / scratch
+$tmp/
+.tmp/
+
+# Tests (kept local)
+/tests/

@@ -1,0 +1,92 @@
+[watermark_keywords]
+active_presets = ["brand"]
+
+[watermark_keywords.presets]
+brand = [
+  "brandname",
+  "brand name",
+  "@brand",
+]
+stock_sites = [
+  "example.com",
+  "rights reserved",
+]
+
+[profiles.datasets.local_smoke]
+input = "./inputs"
+recursive = false
+limit = 2
+benchmark_dataset = "regular_corner_text"
+
+[profiles.providers.seed_telea]
+mask_provider = "seed_manifest"
+restore_provider = "telea"
+ocr_session_mode = "auto"
+
+[profiles.providers.ocr_telea]
+mask_provider = "paddleocr"
+restore_provider = "telea"
+ocr_session_mode = "persistent"
+restore_prompt = "remove the corner watermark text and reconstruct the local background naturally"
+restore_negative_prompt = "smear, blur, melted text, duplicated edges"
+
+[profiles.providers.ocr_telea.restore_options]
+steps = 30
+guidance_scale = 6.5
+
+[profiles.providers.ocr_corner_crop]
+mask_provider = "paddleocr"
+restore_provider = "corner_crop"
+ocr_session_mode = "persistent"
+
+[profiles.providers.ocr_corner_crop.restore_options]
+edge_tolerance = 24
+
+[profiles.providers.ocr_diffusers]
+mask_provider = "paddleocr"
+restore_provider = "diffusers_inpaint"
+ocr_session_mode = "persistent"
+restore_prompt = "remove the corner watermark text and reconstruct the covered background with realistic texture"
+restore_negative_prompt = "smear, blur, melted text, duplicated edges, low detail"
+
+[profiles.providers.ocr_diffusers.restore_options]
+model_id = "runwayml/stable-diffusion-inpainting"
+device = "cuda"
+torch_dtype = "float16"
+steps = 32
+guidance_scale = 7.0
+strength = 0.98
+
+[profiles.providers.ocr_powerpaint_v21]
+mask_provider = "paddleocr"
+restore_provider = "powerpaint_v2_1"
+ocr_session_mode = "persistent"
+restore_prompt = "remove the corner watermark text and reconstruct the covered background with realistic texture"
+restore_negative_prompt = "text, logo, watermark, smear, blur, melted text, duplicated edges"
+
+[profiles.providers.ocr_powerpaint_v21.restore_options]
+checkpoint_dir = "D:/Models/PowerPaint-v2-1"
+session_mode = "auto"
+device = "cuda"
+torch_dtype = "float16"
+steps = 45
+guidance_scale = 10.0
+fitting_degree = 1.0
+brushnet_conditioning_scale = 1.0
+
+[profiles.providers.ocr_brushnet]
+mask_provider = "paddleocr"
+restore_provider = "brushnet"
+ocr_session_mode = "persistent"
+restore_prompt = "remove the corner watermark text and reconstruct the covered background with realistic texture"
+restore_negative_prompt = "text, logo, watermark, smear, blur, melted text, duplicated edges"
+
+[profiles.providers.ocr_brushnet.restore_options]
+brushnet_model_path = "D:/Models/BrushNet/segmentation_mask_brushnet_ckpt"
+base_model_path = "D:/Models/BrushNet/realisticVisionV60B1_v51VAE"
+source_dir = "D:/Code/BrushNet"
+device = "cuda"
+torch_dtype = "float16"
+steps = 40
+guidance_scale = 7.5
+brushnet_conditioning_scale = 1.0
