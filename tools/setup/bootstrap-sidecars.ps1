@@ -1,0 +1,105 @@
+param(
+    [string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path,
+    [string]$PythonCommand = "python",
+    [string]$PaddlePythonCommand = "",
+    [string]$LamaPythonCommand = "",
+    [string]$DiffusersPythonCommand = "",
+    [string]$PowerPaintPythonCommand = "",
+    [string]$BrushNetPythonCommand = "",
+    [switch]$PrintOnly
+)
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+
+function Invoke-Step {
+    param(
+        [string]$Label,
+        [scriptblock]$Action
+    )
+
+    if ($PrintOnly) {
+        Write-Output "PLAN $Label"
+        return
+    }
+
+    Write-Output "RUN  $Label"
+    & $Action
+}
+
+$projectRootPath = (Resolve-Path $ProjectRoot).Path
+$venvRoot = Join-Path $projectRootPath ".venvs"
+$targets = @(
+    @{
+        Name = "paddleocr"
+        Path = Join-Path $venvRoot "paddleocr"
+        EnvVar = "NO_WATERMAR_PADDLEOCR_PYTHON"
+        PythonCommand = if ([string]::IsNullOrWhiteSpace($PaddlePythonCommand)) { $PythonCommand } else { $PaddlePythonCommand }
+    },
+    @{
+        Name = "lama"
+        Path = Join-Path $venvRoot "lama"
+        EnvVar = "NO_WATERMAR_LAMA_PYTHON"
+        PythonCommand = if ([string]::IsNullOrWhiteSpace($LamaPythonCommand)) { $PythonCommand } else { $LamaPythonCommand }
+    },
+    @{
+        Name = "diffusers"
+        Path = Join-Path $venvRoot "diffusers"
+        EnvVar = "NO_WATERMAR_DIFFUSERS_PYTHON"
+        PythonCommand = if ([string]::IsNullOrWhiteSpace($DiffusersPythonCommand)) { $PythonCommand } else { $DiffusersPythonCommand }
+    },
+    @{
+        Name = "powerpaint"
+        Path = Join-Path $venvRoot "powerpaint"
+        EnvVar = "NO_WATERMAR_POWERPAINT_PYTHON"
+        PythonCommand = if ([string]::IsNullOrWhiteSpace($PowerPaintPythonCommand)) { $PythonCommand } else { $PowerPaintPythonCommand }
+    },
+    @{
+        Name = "brushnet"
+        Path = Join-Path $venvRoot "brushnet"
+        EnvVar = "NO_WATERMAR_BRUSHNET_PYTHON"
+        PythonCommand = if ([string]::IsNullOrWhiteSpace($BrushNetPythonCommand)) { $PythonCommand } else { $BrushNetPythonCommand }
+    }
+)
+
+if (-not (Test-Path -LiteralPath $venvRoot)) {
+    Invoke-Step "Create $venvRoot" { New-Item -ItemType Directory -Path $venvRoot | Out-Null }
+}
+
+foreach ($target in $targets) {
+    $venvPath = $target.Path
+    $targetPythonCommand = $target.PythonCommand
+    if (-not (Test-Path -LiteralPath $venvPath)) {
+        Invoke-Step "Create venv $($target.Name)" { & $targetPythonCommand -m venv $venvPath }
+    } else {
+        Write-Output "SKIP $venvPath already exists"
+    }
+
+    $pythonPath = Join-Path $venvPath "Scripts\python.exe"
+    Write-Output "ENV  $($target.EnvVar)=$pythonPath"
+    Write-Output "BASE $($target.Name) via $targetPythonCommand"
+}
+
+Write-Output ""
+Write-Output "NEXT Install provider packages into each venv as needed."
+Write-Output "NEXT Example:"
+Write-Output "NEXT   .\\.venvs\\paddleocr\\Scripts\\python.exe -m pip install --upgrade pip"
+Write-Output "NEXT   .\\.venvs\\paddleocr\\Scripts\\python.exe -m pip install paddleocr"
+Write-Output "NEXT   .\\.venvs\\lama\\Scripts\\python.exe -m pip install --upgrade pip"
+Write-Output "NEXT   .\\.venvs\\lama\\Scripts\\python.exe -m pip install simple-lama-inpainting"
+Write-Output "NEXT   .\\.venvs\\diffusers\\Scripts\\python.exe -m pip install --upgrade pip"
+Write-Output "NEXT   Install the matching torch build for your machine inside .\\.venvs\\diffusers first"
+Write-Output "NEXT   .\\.venvs\\diffusers\\Scripts\\python.exe -m pip install diffusers transformers accelerate safetensors"
+Write-Output "NEXT   .\\.venvs\\powerpaint\\Scripts\\python.exe -m pip install --upgrade pip"
+Write-Output "NEXT   Install the matching torch build for your machine inside .\\.venvs\\powerpaint first"
+Write-Output "NEXT   .\\.venvs\\powerpaint\\Scripts\\python.exe -m pip install diffusers transformers safetensors"
+Write-Output "NEXT   Install PowerPaint as a package in .\\.venvs\\powerpaint or set NO_WATERMAR_POWERPAINT_SOURCE_DIR to a local clone"
+Write-Output "NEXT   .\\.venvs\\brushnet\\Scripts\\python.exe -m pip install --upgrade pip"
+Write-Output "NEXT   Install the matching torch build for your machine inside .\\.venvs\\brushnet first"
+Write-Output "NEXT   .\\.venvs\\brushnet\\Scripts\\python.exe -m pip install transformers accelerate opencv-python pillow"
+Write-Output "NEXT   Install the BrushNet upstream repo in editable mode inside .\\.venvs\\brushnet, or set NO_WATERMAR_BRUSHNET_SOURCE_DIR to a local clone"
+Write-Output "NEXT Override one provider interpreter when needed:"
+Write-Output "NEXT   powershell -ExecutionPolicy Bypass -File .\\tools\\setup\\bootstrap-sidecars.ps1 -LamaPythonCommand `"C:\\Path\\To\\Python312\\python.exe`""
+Write-Output "NEXT   powershell -ExecutionPolicy Bypass -File .\\tools\\setup\\bootstrap-sidecars.ps1 -DiffusersPythonCommand `"C:\\Path\\To\\Python311\\python.exe`""
+Write-Output "NEXT   powershell -ExecutionPolicy Bypass -File .\\tools\\setup\\bootstrap-sidecars.ps1 -PowerPaintPythonCommand `"C:\\Path\\To\\Python312\\python.exe`""
+Write-Output "NEXT   powershell -ExecutionPolicy Bypass -File .\\tools\\setup\\bootstrap-sidecars.ps1 -BrushNetPythonCommand `"C:\\Path\\To\\Python39\\python.exe`""
