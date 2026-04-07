@@ -1,0 +1,55 @@
+[watermark_keywords]
+active_presets = ["stock_marketplaces"]
+
+[watermark_keywords.presets]
+stock_marketplaces = [
+  "example.com",
+  "example.net",
+  "rights reserved",
+]
+
+[profiles.datasets.local_smoke]
+input = "./inputs"
+recursive = false
+limit = 2
+benchmark_dataset = "regular_corner_text"
+
+[profiles.datasets.cover_eval]
+input = "./inputs"
+recursive = true
+benchmark_dataset = "cover_heavy"
+
+[profiles.providers.seed_telea]
+mask_provider = "seed_manifest"
+restore_provider = "telea"
+ocr_session_mode = "auto"
+
+[profiles.providers.ocr_telea]
+mask_provider = "paddleocr"
+restore_provider = "telea"
+ocr_session_mode = "persistent"
+restore_prompt = "remove the corner watermark and preserve the surrounding texture"
+restore_negative_prompt = "smear, blur, over-smoothing"
+
+[profiles.providers.ocr_telea.restore_options]
+steps = 28
+guidance_scale = 6.0
+
+[profiles.providers.lama_eval]
+mask_provider = "seed_manifest"
+restore_provider = "lama"
+ocr_session_mode = "auto"
+
+[profiles.providers.ocr_diffusers]
+mask_provider = "paddleocr"
+restore_provider = "diffusers_inpaint"
+ocr_session_mode = "persistent"
+restore_prompt = "remove the corner watermark and reconstruct the local texture naturally"
+restore_negative_prompt = "smear, blur, low detail, melted text"
+
+[profiles.providers.ocr_diffusers.restore_options]
+model_id = "runwayml/stable-diffusion-inpainting"
+device = "cuda"
+torch_dtype = "float16"
+steps = 32
+guidance_scale = 7.0

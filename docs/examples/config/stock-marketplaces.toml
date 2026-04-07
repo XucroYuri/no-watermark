@@ -1,0 +1,11 @@
+[watermark_keywords]
+active_presets = ["stock_marketplaces"]
+
+[watermark_keywords.presets]
+stock_marketplaces = [
+  "example.com",
+  "example.net",
+  "rights reserved",
+  "licensed preview",
+  "all rights reserved",
+]

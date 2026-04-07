@@ -1,0 +1,11 @@
+[watermark_keywords]
+active_presets = ["brand_social"]
+
+[watermark_keywords.presets]
+brand_social = [
+  "brandname",
+  "brand studio",
+  "@brand",
+  "@brandofficial",
+  "brand media",
+]

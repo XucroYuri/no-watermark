@@ -1,0 +1,16 @@
+[watermark_keywords]
+active_presets = ["brand_social", "generic_corner_text"]
+
+[watermark_keywords.presets]
+brand_social = [
+  "brandname",
+  "@brand",
+  "brand official",
+]
+
+generic_corner_text = [
+  "copyright",
+  "rights reserved",
+  "watermark",
+  "do not repost",
+]
