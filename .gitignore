@@ -38,6 +38,7 @@ Thumbs.db
 # Local temp / scratch
 $tmp/
 .tmp/
+.worktrees/
 
 # Tests (kept local)
 /tests/
