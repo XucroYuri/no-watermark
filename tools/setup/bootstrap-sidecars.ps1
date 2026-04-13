@@ -6,6 +6,8 @@ param(
     [string]$DiffusersPythonCommand = "",
     [string]$PowerPaintPythonCommand = "",
     [string]$BrushNetPythonCommand = "",
+    [switch]$StableOnly,
+    [switch]$InstallPackages,
     [switch]$PrintOnly
 )
 
@@ -35,32 +37,55 @@ $targets = @(
         Path = Join-Path $venvRoot "paddleocr"
         EnvVar = "NO_WATERMAR_PADDLEOCR_PYTHON"
         PythonCommand = if ([string]::IsNullOrWhiteSpace($PaddlePythonCommand)) { $PythonCommand } else { $PaddlePythonCommand }
+        Stable = $true
+        Packages = @("paddleocr")
+        PostInstallNotes = @(
+            "Install the matching Paddle runtime for this machine after paddleocr is present."
+        )
     },
     @{
         Name = "lama"
         Path = Join-Path $venvRoot "lama"
         EnvVar = "NO_WATERMAR_LAMA_PYTHON"
         PythonCommand = if ([string]::IsNullOrWhiteSpace($LamaPythonCommand)) { $PythonCommand } else { $LamaPythonCommand }
+        Stable = $true
+        Packages = @("simple-lama-inpainting")
+        PostInstallNotes = @(
+            "Keep lama on a validated Python 3.12 sidecar when the default shell interpreter is newer."
+        )
     },
     @{
         Name = "diffusers"
         Path = Join-Path $venvRoot "diffusers"
         EnvVar = "NO_WATERMAR_DIFFUSERS_PYTHON"
         PythonCommand = if ([string]::IsNullOrWhiteSpace($DiffusersPythonCommand)) { $PythonCommand } else { $DiffusersPythonCommand }
+        Stable = $false
+        Packages = @()
+        PostInstallNotes = @()
     },
     @{
         Name = "powerpaint"
         Path = Join-Path $venvRoot "powerpaint"
         EnvVar = "NO_WATERMAR_POWERPAINT_PYTHON"
         PythonCommand = if ([string]::IsNullOrWhiteSpace($PowerPaintPythonCommand)) { $PythonCommand } else { $PowerPaintPythonCommand }
+        Stable = $false
+        Packages = @()
+        PostInstallNotes = @()
     },
     @{
         Name = "brushnet"
         Path = Join-Path $venvRoot "brushnet"
         EnvVar = "NO_WATERMAR_BRUSHNET_PYTHON"
         PythonCommand = if ([string]::IsNullOrWhiteSpace($BrushNetPythonCommand)) { $PythonCommand } else { $BrushNetPythonCommand }
+        Stable = $false
+        Packages = @()
+        PostInstallNotes = @()
     }
 )
+
+if ($StableOnly) {
+    $targets = @($targets | Where-Object { $_.Stable })
+}
 
 if (-not (Test-Path -LiteralPath $venvRoot)) {
     Invoke-Step "Create $venvRoot" { New-Item -ItemType Directory -Path $venvRoot | Out-Null }
@@ -78,26 +103,55 @@ foreach ($target in $targets) {
     $pythonPath = Join-Path $venvPath "Scripts\python.exe"
     Write-Output "ENV  $($target.EnvVar)=$pythonPath"
     Write-Output "BASE $($target.Name) via $targetPythonCommand"
+
+    if ($InstallPackages) {
+        $packages = @($target.Packages)
+        if ($packages.Count -gt 0) {
+            Invoke-Step "Upgrade pip in $($target.Name)" { & $pythonPath -m pip install --upgrade pip }
+            Invoke-Step "Install packages for $($target.Name)" { & $pythonPath -m pip install @packages }
+            foreach ($note in @($target.PostInstallNotes)) {
+                Write-Output "NOTE $($target.Name): $note"
+            }
+        }
+        else {
+            Write-Output "SKIP package bootstrap remains manual for $($target.Name)"
+        }
+    }
 }
 
 Write-Output ""
-Write-Output "NEXT Install provider packages into each venv as needed."
-Write-Output "NEXT Example:"
-Write-Output "NEXT   .\\.venvs\\paddleocr\\Scripts\\python.exe -m pip install --upgrade pip"
-Write-Output "NEXT   .\\.venvs\\paddleocr\\Scripts\\python.exe -m pip install paddleocr"
-Write-Output "NEXT   .\\.venvs\\lama\\Scripts\\python.exe -m pip install --upgrade pip"
-Write-Output "NEXT   .\\.venvs\\lama\\Scripts\\python.exe -m pip install simple-lama-inpainting"
-Write-Output "NEXT   .\\.venvs\\diffusers\\Scripts\\python.exe -m pip install --upgrade pip"
-Write-Output "NEXT   Install the matching torch build for your machine inside .\\.venvs\\diffusers first"
-Write-Output "NEXT   .\\.venvs\\diffusers\\Scripts\\python.exe -m pip install diffusers transformers accelerate safetensors"
-Write-Output "NEXT   .\\.venvs\\powerpaint\\Scripts\\python.exe -m pip install --upgrade pip"
-Write-Output "NEXT   Install the matching torch build for your machine inside .\\.venvs\\powerpaint first"
-Write-Output "NEXT   .\\.venvs\\powerpaint\\Scripts\\python.exe -m pip install diffusers transformers safetensors"
-Write-Output "NEXT   Install PowerPaint as a package in .\\.venvs\\powerpaint or set NO_WATERMAR_POWERPAINT_SOURCE_DIR to a local clone"
-Write-Output "NEXT   .\\.venvs\\brushnet\\Scripts\\python.exe -m pip install --upgrade pip"
-Write-Output "NEXT   Install the matching torch build for your machine inside .\\.venvs\\brushnet first"
-Write-Output "NEXT   .\\.venvs\\brushnet\\Scripts\\python.exe -m pip install transformers accelerate opencv-python pillow"
-Write-Output "NEXT   Install the BrushNet upstream repo in editable mode inside .\\.venvs\\brushnet, or set NO_WATERMAR_BRUSHNET_SOURCE_DIR to a local clone"
+if ($StableOnly) {
+    if (-not $InstallPackages) {
+        Write-Output "NEXT Install the stable sidecar packages:"
+        Write-Output "NEXT   .\\.venvs\\paddleocr\\Scripts\\python.exe -m pip install --upgrade pip"
+        Write-Output "NEXT   .\\.venvs\\paddleocr\\Scripts\\python.exe -m pip install paddleocr"
+        Write-Output "NEXT   Install the matching Paddle runtime for your machine inside .\\.venvs\\paddleocr"
+        Write-Output "NEXT   .\\.venvs\\lama\\Scripts\\python.exe -m pip install --upgrade pip"
+        Write-Output "NEXT   .\\.venvs\\lama\\Scripts\\python.exe -m pip install simple-lama-inpainting"
+    }
+    Write-Output "NEXT Validate the stable public path:"
+    Write-Output "NEXT   powershell -ExecutionPolicy Bypass -File .\\tools\\setup\\validate-sidecars.ps1 -StableOnly -RunDoctor"
+    Write-Output "NEXT   powershell -ExecutionPolicy Bypass -File .\\tools\\benchmark\\run-release-smoke.ps1 -Limit 1"
+}
+else {
+    Write-Output "NEXT Install provider packages into each venv as needed."
+    Write-Output "NEXT Example:"
+    Write-Output "NEXT   .\\.venvs\\paddleocr\\Scripts\\python.exe -m pip install --upgrade pip"
+    Write-Output "NEXT   .\\.venvs\\paddleocr\\Scripts\\python.exe -m pip install paddleocr"
+    Write-Output "NEXT   .\\.venvs\\lama\\Scripts\\python.exe -m pip install --upgrade pip"
+    Write-Output "NEXT   .\\.venvs\\lama\\Scripts\\python.exe -m pip install simple-lama-inpainting"
+    Write-Output "NEXT   .\\.venvs\\diffusers\\Scripts\\python.exe -m pip install --upgrade pip"
+    Write-Output "NEXT   Install the matching torch build for your machine inside .\\.venvs\\diffusers first"
+    Write-Output "NEXT   .\\.venvs\\diffusers\\Scripts\\python.exe -m pip install diffusers transformers accelerate safetensors"
+    Write-Output "NEXT   .\\.venvs\\powerpaint\\Scripts\\python.exe -m pip install --upgrade pip"
+    Write-Output "NEXT   Install the matching torch build for your machine inside .\\.venvs\\powerpaint first"
+    Write-Output "NEXT   .\\.venvs\\powerpaint\\Scripts\\python.exe -m pip install diffusers transformers safetensors"
+    Write-Output "NEXT   Install PowerPaint as a package in .\\.venvs\\powerpaint or set NO_WATERMAR_POWERPAINT_SOURCE_DIR to a local clone"
+    Write-Output "NEXT   .\\.venvs\\brushnet\\Scripts\\python.exe -m pip install --upgrade pip"
+    Write-Output "NEXT   Install the matching torch build for your machine inside .\\.venvs\\brushnet first"
+    Write-Output "NEXT   .\\.venvs\\brushnet\\Scripts\\python.exe -m pip install transformers accelerate opencv-python pillow"
+    Write-Output "NEXT   Install the BrushNet upstream repo in editable mode inside .\\.venvs\\brushnet, or set NO_WATERMAR_BRUSHNET_SOURCE_DIR to a local clone"
+}
 Write-Output "NEXT Override one provider interpreter when needed:"
 Write-Output "NEXT   powershell -ExecutionPolicy Bypass -File .\\tools\\setup\\bootstrap-sidecars.ps1 -LamaPythonCommand `"C:\\Path\\To\\Python312\\python.exe`""
 Write-Output "NEXT   powershell -ExecutionPolicy Bypass -File .\\tools\\setup\\bootstrap-sidecars.ps1 -DiffusersPythonCommand `"C:\\Path\\To\\Python311\\python.exe`""

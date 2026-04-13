@@ -102,6 +102,10 @@
 - Added public provider support metadata so descriptors and `providers doctor` now report `support_tier`, validated platforms, and a recommended entrypoint
 - Added packaging metadata for public CLI distribution, including extras for OCR, LaMa, experimental providers, and release tooling
 - Added tracked repository tests plus CI movement toward an install-first validation path instead of source-path-only execution
+- Added a stable-only sidecar bootstrap and validation path, with `providers doctor` now reporting release-blocking stable readiness plus optional `lama` gaps
+- Tightened the release smoke wrapper so it now stops early when the release-blocking stable OCR path is not ready
+- Added release build automation with a local packaging helper, CI package checks, and a tag-driven GitHub Release plus PyPI workflow
+- Added `benchmark evidence` plus `capture-stable-baseline.ps1` so repeated stable benchmark runs now collapse into one release-oriented JSON and Markdown evidence bundle
 
 ## In Progress
 
@@ -109,15 +113,17 @@
 - Reducing OCR scoring overhead in real model-backed runs
 - Formalizing release discipline for a reusable public project
 - Hardening the Windows-first public CLI support matrix while keeping heavy model providers experimental
-- Turning the current `lama` validation path into a more reproducible setup recipe
+- Finishing the reproducible public `lama` recipe on top of the new stable bootstrap path
+- Preparing the repository-side trusted publishing configuration needed for the first live automated release
+- Preparing the first disposable or redistributable repeated-run benchmark corpus for public release evidence
 - Reviewing the current 2-image `brushnet` tuning shortlist through the new local review bundle against `ocr_telea` and the original `ocr_brushnet` baseline
 - Deciding whether any tuned `brushnet` variant is subjectively strong enough to justify a wider slice despite the current metric regressions
 
 ## Next Milestones
 
 - Ship the first reproducible OCR-backed benchmark run with persistent sidecar reuse on real local samples
-- Capture the first documented larger-sample trend snapshot for OCR-backed and model-backed runs
-- Turn the current `lama` setup into a cleaner reproducible recipe with compatibility notes
+- Capture the first release-blocking stable evidence bundle on a disposable or redistributable benchmark slice
+- Turn the current optional stable `lama` path into a one-command reproducible recipe with compatibility notes
 - Turn the new diffusion-backed 10-image snapshot into a human-reviewed provider decision
 - Turn the new persistent `ocr_powerpaint_v21` 2-image snapshot into a human-reviewed provider decision before scaling it to a larger slice
 

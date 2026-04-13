@@ -746,6 +746,19 @@ class CliTests(unittest.TestCase):
         self.assertEqual(payload["snapshot_id"], "20260405-010203-000001")
         self.assertEqual(payload["dataset_id"], "regular_corner_text")
 
+    def test_benchmark_evidence_reports_summary(self) -> None:
+        buffer = io.StringIO()
+        summary = {"evidence_id": "20260414-010203-000001", "status": "ready"}
+
+        with patch("no_watermar.cli.commands.benchmark.build_stable_baseline_evidence", return_value=summary):
+            with patch.dict(os.environ, {}, clear=True), redirect_stdout(buffer):
+                exit_code = main(["benchmark", "evidence"])
+
+        payload = json.loads(buffer.getvalue())
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(payload["evidence_id"], "20260414-010203-000001")
+        self.assertEqual(payload["status"], "ready")
+
     def test_benchmark_run_accepts_dataset_and_provider_profiles(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir)

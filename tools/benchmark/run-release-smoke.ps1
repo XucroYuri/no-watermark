@@ -6,7 +6,8 @@ param(
     [int]$Limit = 2,
     [string]$OcrSessionMode = "auto",
     [switch]$SkipPrepare,
-    [switch]$SkipOcr
+    [switch]$SkipOcr,
+    [switch]$RequireLama
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,6 +15,20 @@ $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = (Resolve-Path (Join-Path $scriptDir "..\..")).Path
 $benchmarkPy = Join-Path $repoRoot "benchmark.py"
+
+function Invoke-CliJson {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]$Arguments
+    )
+
+    $output = & python -m no_watermar.cli @Arguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "no_watermar.cli failed: $($Arguments -join ' ')"
+    }
+
+    return $output | ConvertFrom-Json
+}
 
 function Invoke-BenchmarkJson {
     param(
@@ -32,7 +47,20 @@ function Invoke-BenchmarkJson {
 Write-Host "Repository root: $repoRoot"
 Write-Host "Benchmark root: $BenchmarkRoot"
 
+$doctor = Invoke-CliJson -Arguments @("providers", "doctor")
 $providers = Invoke-BenchmarkJson -Arguments @("probe-providers")
+
+if (-not $SkipOcr) {
+    $stableSetup = $doctor.stable_setup
+    if (-not $stableSetup.release_blocking_ready) {
+        $details = @(
+            @($stableSetup.blocking_issues) | ForEach-Object {
+                "$($_.provider_name) [$($_.issue_code)] $($_.detail)"
+            }
+        ) -join "; "
+        throw "Release-blocking stable providers are not ready for smoke validation. $details"
+    }
+}
 
 if (-not $SkipPrepare) {
     Write-Host "Preparing benchmark dataset..."
@@ -111,7 +139,7 @@ if (-not $SkipOcr) {
         $result["ocr_aggregate_csv"] = $ocrAggregate.output_csv
     }
     else {
-        Write-Warning "paddleocr runtime is unavailable; skipping OCR smoke run."
+        throw "paddleocr runtime is unavailable; stable release smoke requires the OCR-backed path unless -SkipOcr is set."
     }
 }
 
@@ -143,6 +171,9 @@ if ($lamaProvider -and $lamaProvider.runtime_available) {
     $result["lama_aggregate_csv"] = $lamaAggregate.output_csv
 }
 elseif ($lamaProvider) {
+    if ($RequireLama) {
+        throw "lama runtime is unavailable; -RequireLama makes the stable model-backed restore path mandatory. $($lamaProvider.runtime_note)"
+    }
     Write-Warning "lama runtime is unavailable; skipping model-backed smoke run. $($lamaProvider.runtime_note)"
 }
 

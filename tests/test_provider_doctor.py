@@ -108,6 +108,20 @@ class ProviderDoctorTests(unittest.TestCase):
             self.assertEqual(report["summary"]["implemented_unavailable"], 4)
             self.assertEqual(report["summary"]["stable_total"], 4)
             self.assertEqual(report["summary"]["experimental_total"], 2)
+            self.assertIn("stable_setup", report)
+            self.assertEqual(report["stable_setup"]["status"], "action_required")
+            self.assertFalse(report["stable_setup"]["release_blocking_ready"])
+            self.assertFalse(report["stable_setup"]["optional_ready"])
+            self.assertEqual(report["stable_setup"]["release_blocking_providers"], ["paddleocr"])
+            self.assertEqual(report["stable_setup"]["optional_providers"], ["lama"])
+            self.assertEqual(
+                [target["provider_name"] for target in report["stable_setup"]["bootstrap_targets"]],
+                ["paddleocr", "lama"],
+            )
+            self.assertTrue(
+                any(issue["provider_name"] == "paddleocr" for issue in report["stable_setup"]["blocking_issues"])
+            )
+            self.assertTrue(any("bootstrap-sidecars.ps1 -StableOnly" in item for item in report["stable_setup"]["recommended_commands"]))
             self.assertEqual(len(report["sidecars"]), 5)
             paddle = next(sidecar for sidecar in report["sidecars"] if sidecar["provider_name"] == "paddleocr")
             diffusers = next(sidecar for sidecar in report["sidecars"] if sidecar["provider_name"] == "diffusers_inpaint")
@@ -250,6 +264,13 @@ class ProviderDoctorTests(unittest.TestCase):
             self.assertEqual(brushnet["support_tier"], "experimental")
             self.assertEqual(brushnet["configured_python_version"], "3.12.8")
             self.assertEqual(brushnet["compatibility"]["status"], "validated")
+            self.assertEqual(report["stable_setup"]["status"], "release_blocking_ready")
+            self.assertTrue(report["stable_setup"]["release_blocking_ready"])
+            self.assertFalse(report["stable_setup"]["optional_ready"])
+            self.assertEqual(report["stable_setup"]["blocking_issues"], [])
+            self.assertEqual(len(report["stable_setup"]["optional_issues"]), 1)
+            self.assertEqual(report["stable_setup"]["optional_issues"][0]["provider_name"], "lama")
+            self.assertEqual(report["stable_setup"]["optional_issues"][0]["issue_code"], "python_unvalidated")
             self.assertTrue(any("validated Python version" in item for item in report["recommendations"]))
 
 

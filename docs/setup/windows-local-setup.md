@@ -25,7 +25,7 @@ python .\benchmark.py probe-providers
 The supported public Windows path is:
 
 - baseline CLI with `rule_based_roi + telea`
-- OCR-backed CLI with `paddleocr + telea`
+- release-blocking OCR-backed CLI with `paddleocr + telea`
 - optional stable sidecar restore with `lama`
 
 Treat `diffusers_inpaint`, `powerpaint_v2_1`, and `brushnet` as experimental until they are promoted into the supported release matrix.
@@ -42,13 +42,13 @@ Treat `diffusers_inpaint`, `powerpaint_v2_1`, and `brushnet` as experimental unt
 Create provider virtual environments with the helper script:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1
+powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -StableOnly -InstallPackages
 ```
 
 If `lama` needs a different interpreter than the default shell Python, override only that slot:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -LamaPythonCommand "C:\Path\To\Python312\python.exe"
+powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -StableOnly -InstallPackages -LamaPythonCommand "C:\Path\To\Python312\python.exe"
 ```
 
 If the diffusion restore sidecar should use a separate interpreter, override that slot explicitly:
@@ -66,7 +66,7 @@ powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -P
 Review environment status:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\setup\validate-sidecars.ps1
+powershell -ExecutionPolicy Bypass -File .\tools\setup\validate-sidecars.ps1 -StableOnly -RunDoctor
 ```
 
 If the default shell Python is too new for the `lama` stack, create that sidecar with a separate interpreter. One validated path in this workspace used `uv` with Python `3.12`:
@@ -80,9 +80,11 @@ python .\benchmark.py probe-providers
 
 Use the doctor output to confirm that:
 
-- `NO_WATERMAR_LAMA_PYTHON` resolves to the intended interpreter
-- the configured interpreter version is `3.12`
-- the sidecar compatibility status is `validated`
+- `stable_setup.release_blocking_ready` is `true`
+- the blocking stable provider is `paddleocr`
+- `NO_WATERMAR_LAMA_PYTHON` resolves to the intended interpreter when `lama` is configured
+- the configured `lama` interpreter version is `3.12`
+- the `lama` sidecar compatibility status is `validated` when you want the optional model-backed stable restore path
 
 For `diffusers_inpaint`, the current goal is weaker: confirm that `NO_WATERMAR_DIFFUSERS_PYTHON` exists, imports `diffusers`, and then record the exact torch/runtime choice in local notes after the first real smoke run.
 The current validated local smoke path in this workspace uses Python `3.12`, `torch 2.11.0+cu128`, `diffusers 0.37.1`, `HF_ENDPOINT=https://hf-mirror.com`, and a single-file Stable Diffusion inpainting checkpoint with an explicit `original_config`.
@@ -96,3 +98,4 @@ For `powerpaint_v2_1`, the current validated local smoke path uses Python `3.12`
 - If a provider stack depends on a specific CUDA or PyTorch combination, document that choice in local notes instead of changing the baseline repository requirements.
 - If a model wrapper fails under the default Python version, recreate only that sidecar venv with a compatible interpreter rather than changing the whole repository environment.
 - If a sidecar interpreter exists but a provider is still unavailable, use `providers doctor` first and `probe-providers` when you need the raw import probe output.
+- The public release smoke path now fails fast when the release-blocking `paddleocr` setup is not ready. Add `-RequireLama` to `run-release-smoke.ps1` when the optional stable model-backed restore path must also pass.

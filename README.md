@@ -25,12 +25,13 @@ The repository is organized as a reusable framework, not as a single-case sample
 
 The repository now distinguishes between stable and experimental provider paths.
 
-- Stable operator path: `rule_based_roi`, `paddleocr`, `telea`, `corner_crop`, and `lama`
+- Release-blocking stable smoke path: `rule_based_roi`, `paddleocr`, and `telea`
+- Stable optional extensions: `corner_crop` and `lama`
 - Stable public platforms: Windows-first; Linux baseline for the lightweight CLI path
 - Experimental providers: `diffusers_inpaint`, `powerpaint_v2_1`, and `brushnet`
 - Planned providers: `edgesam` and `watermark_segmentation`
 
-Use `.\bin\no-watermar.ps1 providers list` or `.\bin\no-watermar.ps1 providers doctor` to inspect each provider's `support_tier`, validated platforms, and recommended entrypoint.
+Use `.\bin\no-watermar.ps1 providers list` or `.\bin\no-watermar.ps1 providers doctor` to inspect each provider's `support_tier`, validated platforms, and recommended entrypoint. `providers doctor` now also reports `stable_setup`, which tells you whether the release-blocking stable sidecars are ready and which command to run next.
 
 ## Repository Layout
 
@@ -57,6 +58,7 @@ For contributor workflows, install the editable package plus release tooling:
 
 ```powershell
 python -m pip install -e .[dev]
+powershell -ExecutionPolicy Bypass -File .\tools\releases\build-release.ps1 -CleanDist
 ```
 
 Optional sidecar extras now map to the public support matrix:
@@ -66,6 +68,15 @@ python -m pip install .[ocr]
 python -m pip install .[lama]
 python -m pip install .[experimental]
 ```
+
+Bootstrap the public stable sidecar path on Windows:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -StableOnly -InstallPackages
+powershell -ExecutionPolicy Bypass -File .\tools\setup\validate-sidecars.ps1 -StableOnly -RunDoctor
+```
+
+The stable bootstrap path treats `paddleocr` as release-blocking for public smoke runs. `lama` stays on the same stable support track, but it remains optional unless you want the model-backed stable restore path as part of local validation.
 
 Run the batch baseline against `.\inputs\`:
 
@@ -102,12 +113,16 @@ Run the benchmark workflow:
 .\bin\no-watermar.ps1 benchmark compare --baseline-report .\benchmarks\path\baseline.json --candidate-report .\benchmarks\path\candidate.json
 .\bin\no-watermar.ps1 benchmark aggregate --dataset-profile local_smoke --provider-profile seed_telea --reports-root .\benchmarks\runs
 .\bin\no-watermar.ps1 benchmark trends --dataset-profile local_smoke --baseline-provider-profile seed_telea --candidate-provider-profile ocr_telea --benchmark-root .\benchmarks
+.\bin\no-watermar.ps1 benchmark evidence --dataset-profile local_smoke --baseline-provider-profile seed_telea --candidate-provider-profile ocr_telea --optional-provider-profile lama_eval --benchmark-root .\benchmarks --minimum-run-count 3
 .\bin\no-watermar.ps1 benchmark aggregate --reports-root .\benchmarks\runs --dataset regular_corner_text --mask-provider seed_manifest --restore-provider telea
 .\bin\no-watermar.ps1 benchmark trends --dataset regular_corner_text --baseline-mask-provider seed_manifest --baseline-restore-provider telea --candidate-mask-provider paddleocr --candidate-restore-provider telea
 powershell -ExecutionPolicy Bypass -File .\tools\benchmark\run-release-smoke.ps1 -Limit 1
+powershell -ExecutionPolicy Bypass -File .\tools\benchmark\run-release-smoke.ps1 -Limit 1 -RequireLama
+powershell -ExecutionPolicy Bypass -File .\tools\benchmark\capture-stable-baseline.ps1 -Repetitions 3
 ```
 
 `benchmark trends` reads the latest matching comparison and aggregation outputs, then writes a JSON and Markdown snapshot under `.\benchmarks\trends\`.
+`benchmark evidence` turns repeated stable runs into one release-oriented JSON and Markdown bundle under `.\benchmarks\evidence\`, with `latest.json` and `latest.md` kept up to date for release review.
 Dataset and provider profiles can live in `no-watermar.toml`; see [docs/CONFIGURATION.md](./docs/CONFIGURATION.md) and [docs/examples/config/benchmark-local-profiles.toml](./docs/examples/config/benchmark-local-profiles.toml).
 Provider profiles can also carry `restore_prompt`, `restore_negative_prompt`, and structured `restore_options` for restore providers, including model-backed inpainting and direct corner cropping.
 The current no-watermark flow now supports two result choices: repair the detected watermark region in place, or use the local `corner_crop` restore provider to crop away the watermark-bearing corner directly.
@@ -156,6 +171,15 @@ $env:HF_HUB_DISABLE_XET = "1"
 ```
 
 The root CLI module entrypoint, `benchmark.py`, and `run.py` all load the repository-local `.env` file automatically when present.
+
+For the public stable setup path, prefer:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -StableOnly -InstallPackages
+powershell -ExecutionPolicy Bypass -File .\tools\setup\validate-sidecars.ps1 -StableOnly -RunDoctor
+```
+
+That flow keeps the release-blocking `paddleocr` setup explicit, reports whether the optional `lama` path is also ready, and lines up with the release smoke wrapper under `tools\benchmark`.
 
 Current sidecar scripts:
 
@@ -224,7 +248,8 @@ This is the current repository path for FP8-style low-memory diffusion experimen
 - Use `benchmark.py aggregate` to summarize repeated runs by dataset and provider pair.
 - Use `benchmark.py probe-providers` to verify whether configured sidecar interpreters can actually import their expected modules.
 - Use `--mask-provider`, `--restore-provider`, `--run-after`, and `--run-before` to narrow aggregation windows.
-- Use [tools/benchmark/README.md](./tools/benchmark/README.md) for the release smoke wrapper that drives list, run, compare, and aggregate in one pass.
+- Use `benchmark.py evidence` to collapse repeated stable runs into one release-ready evidence summary with compare, aggregate, and trend links.
+- Use [tools/benchmark/README.md](./tools/benchmark/README.md) for the release smoke wrapper and the repeated stable evidence capture wrapper.
 - Use `python .\tools\benchmark\build-review-bundle.py --report ... --label ... --output ...` to assemble a side-by-side human review bundle from benchmark reports, masks, overlays, restored images, and comparison artifacts, especially when multiple reports share the same provider name.
 
 ## Scan And Batch Planning
@@ -263,8 +288,9 @@ The immediate priorities are:
 
 1. Finish Windows-first public packaging and release automation for the stable CLI path.
 2. Harden the stable support matrix around `rule_based_roi` / `paddleocr` + `telea` / `corner_crop` / `lama`.
-3. Keep experimental restore providers available for local evaluation without promoting them into the default release smoke path.
-4. Expand Linux baseline validation for the lightweight CLI path without widening the supported model matrix prematurely.
+3. Capture and archive repeated stable baseline evidence for each release candidate instead of relying on ad-hoc compare and aggregate snapshots.
+4. Keep experimental restore providers available for local evaluation without promoting them into the default release smoke path.
+5. Expand Linux baseline validation for the lightweight CLI path without widening the supported model matrix prematurely.
 
 ## Development Principles
 

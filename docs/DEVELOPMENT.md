@@ -53,12 +53,15 @@ Benchmark setup:
 .\bin\no-watermar.ps1 benchmark compare --baseline-report .\benchmarks\path\baseline.json --candidate-report .\benchmarks\path\candidate.json
 .\bin\no-watermar.ps1 benchmark aggregate --dataset-profile local_smoke --provider-profile seed_telea --reports-root .\benchmarks\runs
 .\bin\no-watermar.ps1 benchmark trends --dataset-profile local_smoke --baseline-provider-profile seed_telea --candidate-provider-profile ocr_telea --benchmark-root .\benchmarks
+.\bin\no-watermar.ps1 benchmark evidence --dataset-profile local_smoke --baseline-provider-profile seed_telea --candidate-provider-profile ocr_telea --optional-provider-profile lama_eval --benchmark-root .\benchmarks --minimum-run-count 3
 .\bin\no-watermar.ps1 benchmark aggregate --reports-root .\benchmarks\runs --dataset regular_corner_text --mask-provider seed_manifest --restore-provider telea
 .\bin\no-watermar.ps1 benchmark trends --dataset regular_corner_text --baseline-mask-provider seed_manifest --baseline-restore-provider telea --candidate-mask-provider paddleocr --candidate-restore-provider telea
 powershell -ExecutionPolicy Bypass -File .\tools\benchmark\run-release-smoke.ps1 -Limit 1
+powershell -ExecutionPolicy Bypass -File .\tools\benchmark\capture-stable-baseline.ps1 -Repetitions 3
 ```
 
 `benchmark trends` auto-resolves the latest matching compare and aggregate artifacts and writes a versioned JSON/Markdown snapshot plus `latest.json` / `latest.md` under `.\benchmarks\trends\`.
+`benchmark evidence` takes the repeated stable runs already stored under the benchmark root and writes a release-oriented JSON/Markdown summary plus `latest.json` / `latest.md` under `.\benchmarks\evidence\`.
 Dataset and provider profiles from `no-watermar.toml` can now drive the same scan, batch, and benchmark flows without repeating the same CLI argument sets.
 For private real-local slices, point `--benchmark-root` at a dedicated ignored subdirectory so compare, aggregate, and trend artifacts stay isolated per dataset.
 Provider profiles can now also carry `restore_prompt`, `restore_negative_prompt`, and `restore_options`, and those fields are persisted through batch plans, batch runs, and benchmark summaries.

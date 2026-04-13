@@ -18,6 +18,8 @@ class PackagingMetadataTests(unittest.TestCase):
         self.assertEqual(project["scripts"]["no-watermar"], "no_watermar.cli:main")
         self.assertEqual(project["scripts"]["no-watermar-benchmark"], "no_watermar.benchmark_cli:main")
         self.assertEqual(project["requires-python"], ">=3.11")
+        self.assertEqual(project["license"], "MIT")
+        self.assertEqual(project["license-files"], ["LICENSE"])
 
         optional_dependencies = project["optional-dependencies"]
         self.assertIn("ocr", optional_dependencies)
@@ -34,11 +36,17 @@ class PackagingMetadataTests(unittest.TestCase):
         classifiers = payload["project"]["classifiers"]
 
         self.assertIn("Environment :: Console", classifiers)
-        self.assertIn("License :: OSI Approved :: MIT License", classifiers)
+        self.assertNotIn("License :: OSI Approved :: MIT License", classifiers)
         self.assertIn("Operating System :: Microsoft :: Windows", classifiers)
         self.assertIn("Operating System :: POSIX :: Linux", classifiers)
         self.assertIn("Programming Language :: Python :: 3.11", classifiers)
         self.assertIn("Programming Language :: Python :: 3.12", classifiers)
+
+    def test_pyproject_uses_project_license_files_instead_of_setuptools_legacy_field(self) -> None:
+        payload = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+        setuptools_payload = payload.get("tool", {}).get("setuptools", {})
+
+        self.assertNotIn("license-files", setuptools_payload)
 
 
 if __name__ == "__main__":

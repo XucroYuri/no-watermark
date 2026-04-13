@@ -10,6 +10,9 @@ The format is based on Keep a Changelog.
 
 - Added provider public-support metadata so CLI descriptors and `providers doctor` now report `support_tier`, validated platforms, and a recommended entrypoint
 - Added tracked repository tests and public packaging metadata for install-first validation
+- Added a `stable_setup` section to `providers doctor` so the public stable sidecar path now reports release-blocking readiness, optional stable gaps, and the next bootstrap or smoke commands
+- Added a local `tools\releases\build-release.ps1` helper plus a tag-driven GitHub Release and PyPI workflow for packaging automation
+- Added `benchmark evidence` and `tools\benchmark\capture-stable-baseline.ps1` so repeated stable benchmark runs now produce one release-ready evidence bundle with JSON and Markdown outputs
 
 - Added persistent `paddleocr` sidecar session support for benchmark runs
 - Added benchmark report aggregation across repeated runs
@@ -63,6 +66,10 @@ The format is based on Keep a Changelog.
 
 - Changed CI to validate the editable package and CLI entrypoint across Windows and Linux runners
 - Changed the public docs to center the professional CLI path and to separate stable providers from experimental restore providers
+- Changed setup helpers and release smoke docs to start from a stable-only `paddleocr` plus optional `lama` bootstrap and validation path
+- Changed the release smoke PowerShell wrapper to fail fast when the release-blocking stable OCR path is not ready
+- Changed CI to run package build and `twine check` validation before the release workflow can publish artifacts
+- Changed the release checklist and process docs to treat the stable evidence bundle as the default benchmark proof for release decisions
 
 - Changed planned batch apply to consume the item list stored in the plan instead of rescanning the input root
 - Changed the root CLI module entrypoint to auto-load the repo-local `.env` file like the legacy wrappers

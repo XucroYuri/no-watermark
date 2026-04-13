@@ -22,6 +22,8 @@ env/
 !/runtime/README.md
 /benchmarks/*
 !/benchmarks/README.md
+/dist/
+/build/
 
 # Local model assets
 /models/

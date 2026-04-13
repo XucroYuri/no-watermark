@@ -22,10 +22,10 @@ Prepare the repository for a first broadly shareable public milestone, tentative
 
 ## Open Gaps
 
-- Provider environment reproducibility is not yet packaged end to end
-- Benchmark reporting still needs stronger quality metrics
-- Release smoke tests now cover baseline, OCR-backed, and `lama`-backed benchmark paths, but only for the currently validated local sidecar recipe
-- PyPI and GitHub Release automation still need to be wired to a tagged release flow
+- Provider environment reproducibility is still Windows-first and not yet packaged end to end for every stable sidecar path
+- Stable baseline evidence capture is now automated, but the first release still needs an agreed disposable or redistributable benchmark corpus for public-facing evidence
+- Benchmark reporting still needs stronger quality metrics beyond the current repeated-run evidence bundle
+- Repository-side trusted publishing still needs to be enabled in GitHub and PyPI before the first live automated release
 
 ## Exit Definition
 

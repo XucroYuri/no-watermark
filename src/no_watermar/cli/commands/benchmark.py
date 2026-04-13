@@ -7,6 +7,7 @@ from typing import Any
 from ...benchmark_aggregate import aggregate_benchmark_reports
 from ...benchmark_compare import compare_benchmark_reports
 from ...benchmark_dataset import DATASET_COVER, DATASET_REGULAR, prepare_benchmark_dataset
+from ...benchmark_evidence import build_stable_baseline_evidence
 from ...benchmark_paddleocr_session import OCR_SESSION_MODE_AUTO, OCR_SESSION_MODE_CHOICES
 from ...benchmark_providers import list_provider_descriptors, probe_provider_runtimes
 from ...benchmark_runner import run_benchmark
@@ -110,6 +111,32 @@ def configure_benchmark_group(subparsers: argparse._SubParsersAction[argparse.Ar
         help="Directory for trend snapshot outputs. Defaults to <benchmark-root>/trends.",
     )
     trends_parser.set_defaults(handler=_handle_trends)
+
+    evidence_parser = benchmark_subparsers.add_parser(
+        "evidence",
+        help="Build a stable baseline evidence summary from repeated benchmark runs.",
+    )
+    evidence_parser.add_argument("--benchmark-root", type=Path, default=_default_benchmark_root(), help="Benchmark root.")
+    evidence_parser.add_argument("--dataset-profile", default=None, help="Optional named dataset profile from no-watermar.toml.")
+    evidence_parser.add_argument("--dataset", default=None, help="Optional dataset filter.")
+    evidence_parser.add_argument("--baseline-provider-profile", default=None, help="Optional baseline provider profile from no-watermar.toml.")
+    evidence_parser.add_argument("--baseline-mask-provider", default=None, help="Optional baseline mask provider filter.")
+    evidence_parser.add_argument("--baseline-restore-provider", default=None, help="Optional baseline restore provider filter.")
+    evidence_parser.add_argument("--candidate-provider-profile", default=None, help="Optional candidate provider profile from no-watermar.toml.")
+    evidence_parser.add_argument("--candidate-mask-provider", default=None, help="Optional candidate mask provider filter.")
+    evidence_parser.add_argument("--candidate-restore-provider", default=None, help="Optional candidate restore provider filter.")
+    evidence_parser.add_argument("--optional-provider-profile", default=None, help="Optional optional-stable provider profile from no-watermar.toml.")
+    evidence_parser.add_argument("--optional-mask-provider", default=None, help="Optional optional-stable mask provider filter.")
+    evidence_parser.add_argument("--optional-restore-provider", default=None, help="Optional optional-stable restore provider filter.")
+    evidence_parser.add_argument("--minimum-run-count", type=int, default=3, help="Minimum repeated runs required per stable pair.")
+    evidence_parser.add_argument("--skip-optional", action="store_true", help="Skip the optional stable comparison path.")
+    evidence_parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help="Directory for evidence outputs. Defaults to <benchmark-root>/evidence.",
+    )
+    evidence_parser.set_defaults(handler=_handle_evidence)
 
     list_parser = benchmark_subparsers.add_parser("list-providers", help="List implemented and planned provider slots.")
     list_parser.set_defaults(handler=_handle_list_providers)
@@ -246,6 +273,64 @@ def _handle_trends(args: argparse.Namespace) -> int:
         baseline_provider_profile=baseline_provider_profile,
         candidate_provider_profile=candidate_provider_profile,
     )
+    print_json(summary)
+    return 0
+
+
+def _handle_evidence(args: argparse.Namespace) -> int:
+    dataset_profile = resolve_dataset_profile(args.dataset_profile, start_dir=Path.cwd()) if args.dataset_profile else None
+    baseline_provider_profile = (
+        resolve_provider_profile(args.baseline_provider_profile, start_dir=Path.cwd())
+        if args.baseline_provider_profile
+        else None
+    )
+    candidate_provider_profile = (
+        resolve_provider_profile(args.candidate_provider_profile, start_dir=Path.cwd())
+        if args.candidate_provider_profile
+        else None
+    )
+    optional_provider_profile = (
+        resolve_provider_profile(args.optional_provider_profile, start_dir=Path.cwd())
+        if args.optional_provider_profile
+        else None
+    )
+    summary = build_stable_baseline_evidence(
+        benchmark_root=args.benchmark_root,
+        dataset_id=args.dataset or (
+            dataset_profile.benchmark_dataset if dataset_profile and dataset_profile.benchmark_dataset else DATASET_REGULAR
+        ),
+        baseline_mask_provider=args.baseline_mask_provider or (
+            baseline_provider_profile.mask_provider if baseline_provider_profile else None
+        ) or "seed_manifest",
+        baseline_restore_provider=args.baseline_restore_provider or (
+            baseline_provider_profile.restore_provider if baseline_provider_profile else None
+        ) or "telea",
+        candidate_mask_provider=args.candidate_mask_provider or (
+            candidate_provider_profile.mask_provider if candidate_provider_profile else None
+        ) or "paddleocr",
+        candidate_restore_provider=args.candidate_restore_provider or (
+            candidate_provider_profile.restore_provider if candidate_provider_profile else None
+        ) or "telea",
+        optional_mask_provider=args.optional_mask_provider or (
+            optional_provider_profile.mask_provider if optional_provider_profile else None
+        ) or "seed_manifest",
+        optional_restore_provider=args.optional_restore_provider or (
+            optional_provider_profile.restore_provider if optional_provider_profile else None
+        ) or "lama",
+        include_optional=not args.skip_optional,
+        minimum_run_count=args.minimum_run_count,
+        output_dir=args.output_dir or (args.benchmark_root / "evidence"),
+    )
+    _attach_profile_summary(
+        summary,
+        dataset_profile=dataset_profile,
+        provider_profile=None,
+        baseline_provider_profile=baseline_provider_profile,
+        candidate_provider_profile=candidate_provider_profile,
+    )
+    if optional_provider_profile is not None:
+        summary["optional_provider_profile"] = optional_provider_profile.name
+        summary["optional_provider_profile_config"] = provider_profile_to_dict(optional_provider_profile)
     print_json(summary)
     return 0
 

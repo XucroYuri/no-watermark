@@ -5,9 +5,10 @@
 - Prepare a `0.3.0` public release readiness pass
 - Finish Windows-first packaging for `pip install no-watermar`
 - Keep the stable provider matrix release-blocking and the experimental matrix opt-in
-- Turn the current `lama` and `paddleocr` sidecar recipes into clearly reproducible public setup paths
+- Finish the last mile of the stable sidecar path so `bootstrap-sidecars.ps1 -StableOnly -InstallPackages` and `validate-sidecars.ps1 -StableOnly -RunDoctor` are enough for a new machine
 - Expand CI and release smoke coverage for the stable CLI path on Windows and Linux
-- Turn the current single-run real-local benchmark snapshot into a repeated-run stable baseline
+- Capture the first release-blocking repeated-run stable evidence bundle on a disposable or redistributable benchmark slice
+- Enable GitHub/PyPI trusted publishing so the new tag-driven release workflow can go live
 
 ## Next
 
@@ -18,7 +19,6 @@
 - Validate a second repository-local Python and checkpoint matrix for `brushnet`
 - Validate a second repository-local Python and torch matrix for `diffusers_inpaint`
 - Validate a second repository-local Python and checkpoint matrix for `powerpaint_v2_1`
-- Add PyPI and GitHub Release automation
 
 ## Frozen
 

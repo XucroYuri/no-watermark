@@ -167,13 +167,14 @@ Use dataset and provider profiles in the CLI with:
 .\bin\no-watermar.ps1 benchmark run --dataset-profile local_smoke --provider-profile seed_telea
 .\bin\no-watermar.ps1 benchmark aggregate --dataset-profile local_smoke --provider-profile seed_telea
 .\bin\no-watermar.ps1 benchmark trends --dataset-profile local_smoke --baseline-provider-profile seed_telea --candidate-provider-profile ocr_telea
+.\bin\no-watermar.ps1 benchmark evidence --dataset-profile local_smoke --baseline-provider-profile seed_telea --candidate-provider-profile ocr_telea --optional-provider-profile lama_eval --benchmark-root .\benchmarks --minimum-run-count 3
 ```
 
 CLI rules:
 
 - explicit CLI flags still override profile values
-- `scan show`, `scan run`, `batch plan`, `batch apply`, `benchmark prepare`, `benchmark run`, `benchmark aggregate`, and `benchmark trends` can all reuse `profiles.datasets.<name>`
-- provider profiles currently apply to `batch plan`, `batch apply`, `benchmark run`, `benchmark aggregate`, and `benchmark trends`
+- `scan show`, `scan run`, `batch plan`, `batch apply`, `benchmark prepare`, `benchmark run`, `benchmark aggregate`, `benchmark trends`, and `benchmark evidence` can all reuse `profiles.datasets.<name>`
+- provider profiles currently apply to `batch plan`, `batch apply`, `benchmark run`, `benchmark aggregate`, `benchmark trends`, and `benchmark evidence`
 - `batch plan --scan-manifest ...` and `batch apply --plan ...` remain explicit input contracts and reject mixed direct profile/input flags
 - batch and benchmark runs persist restore prompt and option fields so planned runs can be replayed consistently
 

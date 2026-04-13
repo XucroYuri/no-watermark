@@ -29,3 +29,4 @@ The current public product target is a professional Windows-first CLI with an ex
 ## Tooling Docs
 
 - [Benchmark Helpers](../tools/benchmark/README.md)
+- [Release Helpers](../tools/releases/README.md)
