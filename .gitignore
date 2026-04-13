@@ -39,6 +39,3 @@ Thumbs.db
 $tmp/
 .tmp/
 .worktrees/
-
-# Tests (kept local)
-/tests/
