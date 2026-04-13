@@ -5,7 +5,7 @@
 Baseline development:
 
 ```powershell
-python -m pip install -r .\requirements.txt
+python -m pip install -e .[dev]
 python -m unittest discover -s tests -v
 ```
 
@@ -16,6 +16,8 @@ python -m unittest discover -s tests -v
 - Prefer ASCII in code and config unless existing files already use Unicode
 - Use provider abstractions for heavyweight integrations
 - Keep benchmark artifacts local and disposable
+- Treat `no-watermar` as the primary public CLI entrypoint
+- Keep the stable provider matrix operator-safe; treat model-backed restore providers as experimental unless explicitly promoted
 
 ## Local Commands
 
@@ -70,7 +72,7 @@ That support is now intentionally frozen at the profile level on the current 16 
 The current FP8 attempt should prefer the `diffusers` sidecar because the local `diffusers` environment already exposes `enable_layerwise_casting()` and float8 dtypes, while the repository-local PowerPaint / BrushNet fork still sits on diffusers `0.27.0` without that API.
 For repeated visual checks, `python .\tools\benchmark\build-review-bundle.py --report ... --label ... --output ...` now assembles a side-by-side local review bundle with the original inputs, seed artifacts, provider masks, overlays, restored images, and copied compare/trend artifacts. Use `--label` when you are comparing multiple runs from the same provider family, such as several `brushnet` tuning variants.
 
-Legacy wrappers remain available during migration:
+Legacy wrappers remain available during migration, but do not add new public docs that depend on them:
 
 - `python .\run.py ...`
 - `python .\benchmark.py ...`

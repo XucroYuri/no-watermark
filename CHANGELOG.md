@@ -8,6 +8,9 @@ The format is based on Keep a Changelog.
 
 ### Added
 
+- Added provider public-support metadata so CLI descriptors and `providers doctor` now report `support_tier`, validated platforms, and a recommended entrypoint
+- Added tracked repository tests and public packaging metadata for install-first validation
+
 - Added persistent `paddleocr` sidecar session support for benchmark runs
 - Added benchmark report aggregation across repeated runs
 - Added aggregation filters for provider pairs and run-id windows
@@ -57,6 +60,9 @@ The format is based on Keep a Changelog.
 - Added a local `ocr_fluxfill_fp8` profile for the first low-memory diffusion restore attempt
 
 ### Changed
+
+- Changed CI to validate the editable package and CLI entrypoint across Windows and Linux runners
+- Changed the public docs to center the professional CLI path and to separate stable providers from experimental restore providers
 
 - Changed planned batch apply to consume the item list stored in the plan instead of rescanning the input root
 - Changed the root CLI module entrypoint to auto-load the repo-local `.env` file like the legacy wrappers

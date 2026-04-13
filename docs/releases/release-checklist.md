@@ -9,11 +9,15 @@
 
 ## Validation
 
+- Run `python -m pip install -e .[dev]`
+- Run `python -m no_watermar.cli --help`
 - Run `python -m unittest discover -s tests -v`
 - Run `python .\benchmark.py list-providers`
 - Run `python .\benchmark.py probe-providers`
 - Run at least one baseline smoke command against `.\inputs` or a local disposable test set
 - Run `powershell -ExecutionPolicy Bypass -File .\tools\benchmark\run-release-smoke.ps1 -Limit 1`
+- Confirm stable providers report the expected `support_tier` and validated platforms through `providers list` or `providers doctor`
+- Confirm experimental providers are clearly marked and are not required for the default public smoke path
 - Verify provider failures remain graceful when sidecar environments are absent
 - If using aggregation windows for release review, capture `benchmark.py aggregate` output with provider filters
 - If compare and aggregate outputs are part of the release evidence, capture a `benchmark trends` snapshot under `.\benchmarks\trends\`

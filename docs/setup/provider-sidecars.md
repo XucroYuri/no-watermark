@@ -12,6 +12,13 @@ The baseline repository stays lightweight on purpose. Heavy OCR, segmentation, a
 - `NO_WATERMAR_POWERPAINT_PYTHON`
 - `NO_WATERMAR_BRUSHNET_PYTHON`
 
+## Public Support Tiers
+
+- Stable sidecars: `paddleocr`, `lama`
+- Experimental sidecars: `diffusers_inpaint`, `powerpaint_v2_1`, `brushnet`
+
+`providers doctor` now reports `support_tier`, validated platforms, and the recommended entrypoint for each provider slot so the public release surface stays explicit.
+
 ## Recommended Layout
 
 ```text
@@ -150,6 +157,8 @@ python .\benchmark.py run --dataset regular_corner_text --mask-provider paddleoc
 python .\benchmark.py run --dataset regular_corner_text --mask-provider paddleocr --restore-provider powerpaint_v2_1 --ocr-session-mode persistent
 python .\benchmark.py run --dataset regular_corner_text --mask-provider paddleocr --restore-provider brushnet --ocr-session-mode persistent
 ```
+
+The first public release path should treat only the `paddleocr` and `lama` validation targets above as release-blocking. The diffusion-backed commands remain opt-in local evaluation steps.
 
 For the diffusion-backed runs above, also set either `NO_WATERMAR_DIFFUSERS_MODEL` or `restore_options.model_id` for `diffusers_inpaint`, set either `NO_WATERMAR_POWERPAINT_CHECKPOINT_DIR` or `restore_options.checkpoint_dir` for `powerpaint_v2_1`, and set either `NO_WATERMAR_BRUSHNET_MODEL` or `restore_options.brushnet_model_path` for `brushnet`. When validating the restore-session path, also set `restore_options.session_mode = "auto"` or `"persistent"` in the selected PowerPaint provider profile.
 

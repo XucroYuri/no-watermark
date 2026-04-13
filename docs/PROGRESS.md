@@ -99,12 +99,16 @@
 - Changed interrupted batch runs to persist `run_status = interrupted` plus partial result state for later resume
 - Changed batch run JSON persistence to use atomic file replacement, and changed `batch report` / `batch resume` loading to fall back from a truncated `summary.json` to `reports/report.json`
 - Added confirmation-aware `batch apply --plan` flows with interactive confirm, `--yes`, and `--no-input`
+- Added public provider support metadata so descriptors and `providers doctor` now report `support_tier`, validated platforms, and a recommended entrypoint
+- Added packaging metadata for public CLI distribution, including extras for OCR, LaMa, experimental providers, and release tooling
+- Added tracked repository tests plus CI movement toward an install-first validation path instead of source-path-only execution
 
 ## In Progress
 
 - Converting provider hooks into reproducible model environments
 - Reducing OCR scoring overhead in real model-backed runs
 - Formalizing release discipline for a reusable public project
+- Hardening the Windows-first public CLI support matrix while keeping heavy model providers experimental
 - Turning the current `lama` validation path into a more reproducible setup recipe
 - Reviewing the current 2-image `brushnet` tuning shortlist through the new local review bundle against `ocr_telea` and the original `ocr_brushnet` baseline
 - Deciding whether any tuned `brushnet` variant is subjectively strong enough to justify a wider slice despite the current metric regressions

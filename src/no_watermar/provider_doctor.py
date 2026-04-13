@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from .benchmark_providers import list_provider_descriptors
+from .benchmark_providers import get_provider_public_metadata, list_provider_descriptors
 from .env_loader import read_local_env_file
 from .provider_runtime import probe_python_info
 
@@ -189,6 +189,9 @@ def _describe_sidecar_slot(
         "runtime_probe": descriptor.get("runtime_probe") if descriptor else None,
         "default_mode": descriptor.get("default_mode") if descriptor else None,
         "execution_modes": list(descriptor.get("execution_modes") or []) if descriptor else [],
+        "support_tier": _provider_field(descriptor, provider_name, "support_tier"),
+        "validated_platforms": _provider_field(descriptor, provider_name, "validated_platforms"),
+        "recommended_entrypoint": _provider_field(descriptor, provider_name, "recommended_entrypoint"),
         "compatibility": compatibility,
     }
 
@@ -233,6 +236,12 @@ def _collect_recommendations(sidecars: list[dict[str, Any]]) -> list[str]:
         env_var = sidecar["env_var"]
         provider_name = sidecar["provider_name"]
         runtime_probe = sidecar.get("runtime_probe") or {}
+        support_tier = sidecar.get("support_tier")
+        if support_tier == "experimental" and not sidecar["configured_python"] and not sidecar["runtime_available"]:
+            recommendations.append(
+                f"{provider_name} is experimental. Configure {env_var} only when evaluating model-backed restore locally."
+            )
+            continue
         if not sidecar["configured_python"] and not sidecar["runtime_available"]:
             recommendations.append(
                 f"Configure {env_var} for {provider_name} or install the provider directly in the current Python environment."
@@ -289,6 +298,7 @@ def _build_compatibility_matrix(project_root: Path) -> dict[str, dict[str, Any]]
     for slot in SIDECAR_SLOTS:
         provider_name = str(slot["provider_name"])
         entry = SIDECAR_COMPATIBILITY.get(provider_name, {})
+        public_metadata = get_provider_public_metadata(provider_name)
         matrix[provider_name] = {
             "provider_name": provider_name,
             "env_var": str(slot["env_var"]),
@@ -298,6 +308,9 @@ def _build_compatibility_matrix(project_root: Path) -> dict[str, dict[str, Any]]
             "validated_packages": list(entry.get("validated_packages") or []),
             "status": str(entry.get("status") or "unspecified"),
             "notes": list(entry.get("notes") or []),
+            "support_tier": str(public_metadata["support_tier"]),
+            "validated_platforms": list(public_metadata["validated_platforms"]),
+            "recommended_entrypoint": public_metadata["recommended_entrypoint"],
         }
     return matrix
 
@@ -338,11 +351,17 @@ def _summarize_provider_descriptors(descriptors: dict[str, list[dict[str, Any]]]
     planned = [descriptor for descriptor in all_descriptors if not descriptor.get("implemented")]
     available = [descriptor for descriptor in implemented if descriptor.get("runtime_available")]
     unavailable = [descriptor for descriptor in implemented if not descriptor.get("runtime_available")]
+    stable = [descriptor for descriptor in implemented if _descriptor_support_tier(descriptor) == "stable"]
+    experimental = [descriptor for descriptor in implemented if _descriptor_support_tier(descriptor) == "experimental"]
     return {
         "implemented_total": len(implemented),
         "implemented_available": len(available),
         "implemented_unavailable": len(unavailable),
         "planned_total": len(planned),
+        "stable_total": len(stable),
+        "stable_available": len([descriptor for descriptor in stable if descriptor.get("runtime_available")]),
+        "experimental_total": len(experimental),
+        "experimental_available": len([descriptor for descriptor in experimental if descriptor.get("runtime_available")]),
     }
 
 
@@ -355,3 +374,15 @@ def _unique_preserve_order(values: list[str]) -> list[str]:
         seen.add(value)
         deduped.append(value)
     return deduped
+
+
+def _provider_field(descriptor: dict[str, Any] | None, provider_name: str, field_name: str) -> Any:
+    if descriptor and field_name in descriptor:
+        return descriptor[field_name]
+    public_metadata = get_provider_public_metadata(provider_name)
+    return public_metadata[field_name]
+
+
+def _descriptor_support_tier(descriptor: dict[str, Any]) -> str:
+    provider_name = str(descriptor.get("name") or "")
+    return str(_provider_field(descriptor, provider_name, "support_tier"))

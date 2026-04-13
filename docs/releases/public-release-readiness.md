@@ -10,7 +10,8 @@ Prepare the repository for a first broadly shareable public milestone, tentative
 - Stable baseline CLI and benchmark scaffold
 - Contributor-facing documentation complete enough for external onboarding
 - Release checklist and versioning policy in place
-- CI passing on the supported baseline Python versions
+- CI passing on the supported baseline Python versions and platforms
+- Stable provider tiers clearly separated from experimental ones in the public CLI and docs
 
 ## Recommended Conditions
 
@@ -21,10 +22,10 @@ Prepare the repository for a first broadly shareable public milestone, tentative
 
 ## Open Gaps
 
-- Provider environment reproducibility is not yet packaged
+- Provider environment reproducibility is not yet packaged end to end
 - Benchmark reporting still needs stronger quality metrics
 - Release smoke tests now cover baseline, OCR-backed, and `lama`-backed benchmark paths, but only for the currently validated local sidecar recipe
-- Packaging and distribution artifacts are not yet automated
+- PyPI and GitHub Release automation still need to be wired to a tagged release flow
 
 ## Exit Definition
 

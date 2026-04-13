@@ -98,7 +98,10 @@ class DiffusersProviderTests(unittest.TestCase):
             descriptor for descriptor in descriptors["restore_providers"] if descriptor["name"] == "diffusers_inpaint"
         )
         self.assertTrue(diffusers_descriptor["implemented"])
+        self.assertEqual(diffusers_descriptor["support_tier"], "experimental")
         self.assertEqual(diffusers_descriptor["default_mode"], "oneshot-sidecar")
+        self.assertEqual(diffusers_descriptor["recommended_entrypoint"], "no-watermar benchmark run")
+        self.assertEqual(diffusers_descriptor["validated_platforms"], ["windows"])
         self.assertIn("NO_WATERMAR_DIFFUSERS_PYTHON", diffusers_descriptor["required_env_vars"])
 
     def test_powerpaint_restore_provider_uses_sidecar_and_preserves_prompt_contract(self) -> None:
@@ -241,7 +244,10 @@ class DiffusersProviderTests(unittest.TestCase):
             descriptor for descriptor in descriptors["restore_providers"] if descriptor["name"] == "powerpaint_v2_1"
         )
         self.assertTrue(powerpaint_descriptor["implemented"])
+        self.assertEqual(powerpaint_descriptor["support_tier"], "experimental")
         self.assertEqual(powerpaint_descriptor["default_mode"], "persistent-sidecar")
+        self.assertEqual(powerpaint_descriptor["recommended_entrypoint"], "no-watermar benchmark run")
+        self.assertEqual(powerpaint_descriptor["validated_platforms"], ["windows"])
         self.assertIn("persistent-sidecar", powerpaint_descriptor["execution_modes"])
         self.assertIn("NO_WATERMAR_POWERPAINT_PYTHON", powerpaint_descriptor["required_env_vars"])
         self.assertIn("NO_WATERMAR_POWERPAINT_CHECKPOINT_DIR", powerpaint_descriptor["required_env_vars"])
@@ -325,10 +331,40 @@ class DiffusersProviderTests(unittest.TestCase):
             descriptor for descriptor in descriptors["restore_providers"] if descriptor["name"] == "brushnet"
         )
         self.assertTrue(brushnet_descriptor["implemented"])
+        self.assertEqual(brushnet_descriptor["support_tier"], "experimental")
         self.assertEqual(brushnet_descriptor["default_mode"], "oneshot-sidecar")
+        self.assertEqual(brushnet_descriptor["recommended_entrypoint"], "no-watermar benchmark run")
+        self.assertEqual(brushnet_descriptor["validated_platforms"], ["windows"])
         self.assertIn("inprocess", brushnet_descriptor["execution_modes"])
         self.assertIn("NO_WATERMAR_BRUSHNET_PYTHON", brushnet_descriptor["required_env_vars"])
         self.assertIn("NO_WATERMAR_BRUSHNET_MODEL", brushnet_descriptor["required_env_vars"])
+
+    def test_list_provider_descriptors_marks_stable_public_matrix(self) -> None:
+        with patch("no_watermar.benchmark_providers._describe_paddleocr_runtime", return_value=(True, "ok", {"ok": True})):
+            with patch("no_watermar.benchmark_providers._describe_lama_runtime", return_value=(True, "ok", {"ok": True})):
+                with patch("no_watermar.benchmark_providers._describe_diffusers_runtime", return_value=(False, "not configured", {"ok": False})):
+                    with patch("no_watermar.benchmark_providers._describe_powerpaint_runtime", return_value=(False, "not configured", {"ok": False})):
+                        with patch("no_watermar.benchmark_providers._describe_brushnet_runtime", return_value=(False, "not configured", {"ok": False})):
+                            descriptors = list_provider_descriptors()
+
+        rule_descriptor = next(descriptor for descriptor in descriptors["mask_providers"] if descriptor["name"] == "rule_based_roi")
+        paddle_descriptor = next(descriptor for descriptor in descriptors["mask_providers"] if descriptor["name"] == "paddleocr")
+        telea_descriptor = next(descriptor for descriptor in descriptors["restore_providers"] if descriptor["name"] == "telea")
+        lama_descriptor = next(descriptor for descriptor in descriptors["restore_providers"] if descriptor["name"] == "lama")
+        corner_crop_descriptor = next(descriptor for descriptor in descriptors["restore_providers"] if descriptor["name"] == "corner_crop")
+        planned_descriptor = next(descriptor for descriptor in descriptors["mask_providers"] if descriptor["name"] == "edgesam")
+
+        self.assertEqual(rule_descriptor["support_tier"], "stable")
+        self.assertEqual(rule_descriptor["validated_platforms"], ["windows", "linux"])
+        self.assertEqual(rule_descriptor["recommended_entrypoint"], "no-watermar batch apply")
+        self.assertEqual(paddle_descriptor["support_tier"], "stable")
+        self.assertEqual(paddle_descriptor["validated_platforms"], ["windows"])
+        self.assertEqual(telea_descriptor["support_tier"], "stable")
+        self.assertEqual(lama_descriptor["support_tier"], "stable")
+        self.assertEqual(corner_crop_descriptor["support_tier"], "stable")
+        self.assertEqual(planned_descriptor["support_tier"], "planned")
+        self.assertEqual(planned_descriptor["validated_platforms"], [])
+        self.assertIsNone(planned_descriptor["recommended_entrypoint"])
 
 
 if __name__ == "__main__":

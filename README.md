@@ -1,13 +1,13 @@
 # no-watermar
 
-`no-watermar` is a local-first batch watermark removal and restoration framework for image sets that share repeatable watermark layouts, corner text marks, or reusable background structure.
+`no-watermar` is a professional local-first CLI for batch watermark removal, restoration benchmarking, and repeatable review workflows over image sets that share reusable watermark layouts or corner text marks.
 
 The repository is organized as a reusable framework, not as a single-case sample project. Private inputs, generated outputs, benchmark artifacts, and local model environments are intentionally kept out of version control.
 
 ## Status
 
 - Current maturity: `0.2.0`
-- Focus: batch processing framework, benchmark scaffolding, provider integration
+- Focus: professional CLI hardening, benchmark scaffolding, provider integration
 - Default stack: Python, OpenCV, optional OCR / inpainting sidecars
 
 ## What It Does
@@ -20,6 +20,17 @@ The repository is organized as a reusable framework, not as a single-case sample
 - Support two no-watermark output modes: in-place repair or direct corner cropping
 - Prepare benchmark datasets and benchmark reports
 - Provide a provider abstraction for OCR, segmentation, and restoration models
+
+## Public Support Matrix
+
+The repository now distinguishes between stable and experimental provider paths.
+
+- Stable operator path: `rule_based_roi`, `paddleocr`, `telea`, `corner_crop`, and `lama`
+- Stable public platforms: Windows-first; Linux baseline for the lightweight CLI path
+- Experimental providers: `diffusers_inpaint`, `powerpaint_v2_1`, and `brushnet`
+- Planned providers: `edgesam` and `watermark_segmentation`
+
+Use `.\bin\no-watermar.ps1 providers list` or `.\bin\no-watermar.ps1 providers doctor` to inspect each provider's `support_tier`, validated platforms, and recommended entrypoint.
 
 ## Repository Layout
 
@@ -36,10 +47,24 @@ benchmarks/          Benchmark datasets and reports (not committed)
 
 ## Quick Start
 
-Install the local baseline dependencies:
+Install from a local checkout:
 
 ```powershell
-python -m pip install -r .\requirements.txt
+python -m pip install .
+```
+
+For contributor workflows, install the editable package plus release tooling:
+
+```powershell
+python -m pip install -e .[dev]
+```
+
+Optional sidecar extras now map to the public support matrix:
+
+```powershell
+python -m pip install .[ocr]
+python -m pip install .[lama]
+python -m pip install .[experimental]
 ```
 
 Run the batch baseline against `.\inputs\`:
@@ -86,7 +111,7 @@ powershell -ExecutionPolicy Bypass -File .\tools\benchmark\run-release-smoke.ps1
 Dataset and provider profiles can live in `no-watermar.toml`; see [docs/CONFIGURATION.md](./docs/CONFIGURATION.md) and [docs/examples/config/benchmark-local-profiles.toml](./docs/examples/config/benchmark-local-profiles.toml).
 Provider profiles can also carry `restore_prompt`, `restore_negative_prompt`, and structured `restore_options` for restore providers, including model-backed inpainting and direct corner cropping.
 The current no-watermark flow now supports two result choices: repair the detected watermark region in place, or use the local `corner_crop` restore provider to crop away the watermark-bearing corner directly.
-The first prompt-driven restore adapter now ships as `diffusers_inpaint`; it is an experimental generic diffusion baseline, not yet a validated quality winner for this repository.
+The first prompt-driven restore adapter now ships as `diffusers_inpaint`; it remains experimental and is not part of the default public support matrix.
 The current local validated smoke path uses a Python `3.12` sidecar plus single-file Stable Diffusion inpainting weights loaded through `from_single_file`.
 The current real-local 4-image and 10-image benchmark snapshots against `ocr_telea` show that this generic `diffusers_inpaint` configuration preserves the same OCR mask but still regresses `mean_abs_diff` and `edge_delta`, so it should be treated as an exploratory baseline rather than the current recommended restore path.
 The repository still retains `FluxFillPipeline` support plus BF16 and FP8 layerwise-casting options for future low-memory diffusion experiments, but the repo-local `ocr_fluxfill_fp8` profile is currently frozen on the 16 GB local GPU because it has no validated smoke path and already depends on aggressive memory-saving and offload settings just to attempt bring-up.
@@ -97,7 +122,7 @@ The next experimental restore adapter now also includes `brushnet`, wired behind
 The first local `brushnet` smoke path is now also validated on Python `3.12` by reusing the repository-local PowerPaint environment together with a repo-local `NO_WATERMAR_BRUSHNET_SOURCE_DIR` clone under `.\models\brushnet-source`.
 The first 2-image real-local `ocr_brushnet` comparison now shows a clearer position: it still trails `ocr_telea` on `mean_abs_diff`, `edge_delta`, and restore latency, but it already looks more promising than the current persistent `ocr_powerpaint_v21` path on mean absolute difference and end-to-end latency.
 
-Compatibility entrypoints still work:
+Legacy compatibility entrypoints still work, but the public CLI surface is `no-watermar`:
 
 ```powershell
 python .\run.py --scan-only
@@ -236,10 +261,10 @@ The CLI redesign for the next open-source iteration is tracked in [docs/plans/in
 
 The immediate priorities are:
 
-1. Compare `seed_manifest + lama` against `seed_manifest + telea` on a larger local slice.
-2. Use the new shortlist review bundle to inspect the current 2-image `brushnet` tuning variants against `ocr_telea` and the original `ocr_brushnet` baseline.
-3. Decide whether any tuned `brushnet` variant is subjectively strong enough to justify a wider slice despite the current metric regressions.
-4. Reduce persistent `paddleocr` mask latency on real local benchmark slices.
+1. Finish Windows-first public packaging and release automation for the stable CLI path.
+2. Harden the stable support matrix around `rule_based_roi` / `paddleocr` + `telea` / `corner_crop` / `lama`.
+3. Keep experimental restore providers available for local evaluation without promoting them into the default release smoke path.
+4. Expand Linux baseline validation for the lightweight CLI path without widening the supported model matrix prematurely.
 
 ## Development Principles
 

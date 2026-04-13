@@ -15,12 +15,20 @@ Prepare a clean Windows development workspace for the baseline pipeline and opti
 From the repository root:
 
 ```powershell
-python -m pip install -r .\requirements.txt
+python -m pip install -e .[dev]
 python -m unittest discover -s tests -v
 python .\benchmark.py list-providers
 python .\benchmark.py probe-providers
 .\bin\no-watermar.ps1 providers doctor
 ```
+
+The supported public Windows path is:
+
+- baseline CLI with `rule_based_roi + telea`
+- OCR-backed CLI with `paddleocr + telea`
+- optional stable sidecar restore with `lama`
+
+Treat `diffusers_inpaint`, `powerpaint_v2_1`, and `brushnet` as experimental until they are promoted into the supported release matrix.
 
 ## Recommended Workspace Conventions
 

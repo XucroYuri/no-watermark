@@ -15,5 +15,5 @@ This section documents how to prepare a local development workspace and optional
 3. Create dedicated sidecar environments under `./.venvs` for heavyweight providers.
 4. Put provider interpreter paths in the repo-local `.env` or export them in the current shell.
 5. Run `.\bin\no-watermar.ps1 providers doctor` before model-backed benchmarks and confirm the compatibility status for each configured sidecar.
-6. Treat `diffusers_inpaint` as experimental until a real local smoke run records both the interpreter path and the exact torch/model combination.
+6. Keep the public stable matrix focused on `paddleocr` and `lama`; treat `diffusers_inpaint`, `powerpaint_v2_1`, and `brushnet` as experimental local-only evaluation paths.
 7. Keep benchmark and runtime outputs local and disposable.

@@ -1,6 +1,7 @@
 # Documentation
 
 This directory contains the project-level documentation for the generic `no-watermar` framework.
+The current public product target is a professional Windows-first CLI with an explicit stable-versus-experimental provider matrix.
 
 ## Core Docs
 
