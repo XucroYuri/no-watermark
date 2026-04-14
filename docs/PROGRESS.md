@@ -38,6 +38,7 @@
 - Aggregate summaries now roll up repeated benchmark runs by dataset and provider pair
 - Benchmark trend snapshots now merge the latest compare output with aggregate baselines into JSON and Markdown summaries
 - Release smoke script now drives list, baseline run, OCR-backed run, compare, and aggregate in one local command
+- Release-blocking stable evidence now captures a ready-state `paddleocr + telea` bundle on the public synthetic fixture, with the optional `seed_manifest + lama` comparison bundled alongside it
 - `lama` sidecar rebuilt on Python `3.12` and validated with `simple_lama_inpainting`
 - Model-backed `seed_manifest + lama` smoke benchmark now runs successfully through the release smoke script
 - `providers doctor` now reports sidecar interpreter versions against a documented compatibility matrix
@@ -111,6 +112,7 @@
 - Added evidence zip packaging plus GitHub Release asset wiring so disposable benchmark evidence is no longer just a raw workflow directory artifact
 - Fixed the stable bootstrap path so repo config initialization no longer depends on the sidecar interpreter override, and external bootstrap failures now stop the script immediately
 - Changed benchmark runs to reject empty prepared datasets before they start provider sidecars, which turns release smoke on empty inputs into a fast configuration error instead of a long hang
+- Fixed stable runtime probing so `providers doctor` now requires the Paddle runtime dependency instead of treating a bare `paddleocr` import as release-ready
 
 ## In Progress
 
@@ -126,7 +128,7 @@
 ## Next Milestones
 
 - Ship the first reproducible OCR-backed benchmark run with persistent sidecar reuse on real local samples
-- Capture the first release-blocking stable evidence bundle on the stable `paddleocr + telea` path and archive it beside the disposable automation bundle
+- Archive the first stable public evidence bundle beside the disposable automation bundle on the first tagged release
 - Turn the current optional stable `lama` path into a one-command reproducible recipe with compatibility notes
 - Turn the new diffusion-backed 10-image snapshot into a human-reviewed provider decision
 - Turn the new persistent `ocr_powerpaint_v21` 2-image snapshot into a human-reviewed provider decision before scaling it to a larger slice

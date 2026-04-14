@@ -23,7 +23,7 @@ Prepare the repository for a first broadly shareable public milestone, tentative
 
 ## Open Gaps
 
-- Provider environment reproducibility is still Windows-first and not yet packaged end to end for every stable sidecar path
+- Stable sidecar reproducibility is now validated on the Windows-first public fixture path, but Linux parity and broader cross-machine packaging still lag that path
 - Benchmark reporting still needs stronger quality metrics beyond the current repeated-run evidence bundles
 - Repository-side trusted publishing still needs to be enabled in GitHub and PyPI before the first live automated release
 
