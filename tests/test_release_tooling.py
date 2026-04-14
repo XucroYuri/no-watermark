@@ -16,6 +16,10 @@ class ReleaseToolingTests(unittest.TestCase):
             self.assertIn("actions/checkout@v6", content)
             self.assertIn("actions/setup-python@v6", content)
 
+        self.assertIn("actions/upload-artifact@v7", ci_workflow)
+        self.assertIn("actions/upload-artifact@v7", release_workflow)
+        self.assertIn("actions/download-artifact@v8", release_workflow)
+
     def test_ci_workflow_runs_package_build_checks(self) -> None:
         workflow_path = REPO_ROOT / ".github" / "workflows" / "ci.yml"
         content = workflow_path.read_text(encoding="utf-8")

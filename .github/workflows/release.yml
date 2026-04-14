@@ -41,12 +41,12 @@ jobs:
         run: |
           python -m twine check dist/*
       - name: Upload release artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: python-dist
           path: dist/*
       - name: Upload disposable evidence bundle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: disposable-evidence
           path: runtime/release-disposable-evidence/package/*
@@ -60,12 +60,12 @@ jobs:
 
     steps:
       - name: Download release artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: python-dist
           path: dist
       - name: Download disposable evidence bundle
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: disposable-evidence
           path: evidence
@@ -88,7 +88,7 @@ jobs:
 
     steps:
       - name: Download release artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: python-dist
           path: dist
