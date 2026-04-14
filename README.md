@@ -76,7 +76,7 @@ powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -S
 powershell -ExecutionPolicy Bypass -File .\tools\setup\validate-sidecars.ps1 -StableOnly -RunDoctor
 ```
 
-The stable bootstrap path treats `paddleocr` as release-blocking for public smoke runs. `lama` stays on the same stable support track, but it remains optional unless you want the model-backed stable restore path as part of local validation.
+The stable bootstrap path treats `paddleocr` as release-blocking for public smoke runs. `lama` stays on the same stable support track, but it remains optional unless you want the model-backed stable restore path as part of local validation. When no repo-local `no-watermar.toml` exists yet, the stable bootstrap also initializes it from the built-in `stable-public` template so `local_smoke`, `seed_telea`, `ocr_telea`, `lama_eval`, and `ocr_corner_crop` are available immediately.
 
 Run the batch baseline against `.\inputs\`:
 
@@ -199,7 +199,7 @@ You can define named OCR watermark keyword presets in a repo-local `no-watermar.
 - Use `NO_WATERMAR_WATERMARK_KEYWORD_PRESETS` to activate additional named presets from the config file
 - Use `NO_WATERMAR_WATERMARK_KEYWORDS` for one-off extra tokens
 - Start from `./no-watermar.toml.example` and see [Configuration](./docs/CONFIGURATION.md) for the full format
-- Create a starter file with `.\bin\no-watermar.ps1 config init --template default`
+- Create a starter file with `.\bin\no-watermar.ps1 config init --template default` or `.\bin\no-watermar.ps1 config init --template stable-public`
 - Inspect the effective config with `.\bin\no-watermar.ps1 config show`
 - Validate the effective config with `.\bin\no-watermar.ps1 config validate`
 - See ready-made examples under [docs/examples/config](./docs/examples/config/README.md)

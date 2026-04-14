@@ -14,6 +14,7 @@ The format is based on Keep a Changelog.
 - Added a local `tools\releases\build-release.ps1` helper plus a tag-driven GitHub Release and PyPI workflow for packaging automation
 - Added `benchmark evidence` and `tools\benchmark\capture-stable-baseline.ps1` so repeated stable benchmark runs now produce one release-ready evidence bundle with JSON and Markdown outputs
 - Added a repo-native disposable benchmark fixture plus `tools\benchmark\capture-disposable-evidence.py`, and wired that sidecar-free evidence path into CI, release preflight, and release build artifacts
+- Added a `stable-public` config template and automatic stable-config initialization during `bootstrap-sidecars.ps1 -StableOnly`
 
 - Added persistent `paddleocr` sidecar session support for benchmark runs
 - Added benchmark report aggregation across repeated runs

@@ -150,6 +150,22 @@ class ConfigTests(unittest.TestCase):
             self.assertTrue(config_path.exists())
             self.assertIn('active_presets = ["brand_social"]', config_path.read_text(encoding="utf-8"))
 
+    def test_init_project_config_writes_stable_public_template_profiles(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+
+            with patch.dict(os.environ, {}, clear=True):
+                summary = init_project_config(start_dir=root, template_name="stable-public")
+
+            config_path = root / "no-watermar.toml"
+            content = config_path.read_text(encoding="utf-8")
+            self.assertEqual(summary["template"], "stable-public")
+            self.assertIn("[profiles.datasets.local_smoke]", content)
+            self.assertIn('[profiles.providers.seed_telea]', content)
+            self.assertIn('[profiles.providers.ocr_telea]', content)
+            self.assertIn('[profiles.providers.lama_eval]', content)
+            self.assertIn('[profiles.providers.ocr_corner_crop]', content)
+
     def test_init_project_config_rejects_existing_file_without_force(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir)
@@ -163,7 +179,7 @@ class ConfigTests(unittest.TestCase):
     def test_list_config_template_names_includes_builtins(self) -> None:
         self.assertEqual(
             list_config_template_names(),
-            ("default", "brand-social", "stock-marketplaces", "mixed-corner-text"),
+            ("default", "brand-social", "stock-marketplaces", "mixed-corner-text", "stable-public"),
         )
 
     def test_resolve_dataset_and_provider_profiles(self) -> None:

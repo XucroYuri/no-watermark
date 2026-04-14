@@ -45,6 +45,8 @@ Create provider virtual environments with the helper script:
 powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -StableOnly -InstallPackages
 ```
 
+When no repo-local `no-watermar.toml` exists yet, that command now initializes one from the built-in `stable-public` template so the standard stable dataset and provider profiles are available immediately.
+
 If `lama` needs a different interpreter than the default shell Python, override only that slot:
 
 ```powershell
@@ -67,6 +69,12 @@ Review environment status:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\setup\validate-sidecars.ps1 -StableOnly -RunDoctor
+```
+
+If you want to manage the local config yourself, opt out of the automatic stable config bootstrap:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -StableOnly -InstallPackages -SkipConfigInit
 ```
 
 If the default shell Python is too new for the `lama` stack, create that sidecar with a separate interpreter. One validated path in this workspace used `uv` with Python `3.12`:

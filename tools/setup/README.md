@@ -19,7 +19,9 @@ powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -S
 powershell -ExecutionPolicy Bypass -File .\tools\setup\validate-sidecars.ps1 -StableOnly -RunDoctor
 ```
 
-That path treats `paddleocr` as the release-blocking stable sidecar and `lama` as the optional stable model-backed restore path.
+That path treats `paddleocr` as the release-blocking stable sidecar and `lama` as the optional stable model-backed restore path. When no repo-local `no-watermar.toml` exists yet, the stable bootstrap also initializes one from the built-in `stable-public` template so the standard `local_smoke`, `seed_telea`, `ocr_telea`, `lama_eval`, and `ocr_corner_crop` profiles are ready immediately.
+
+Pass `-SkipConfigInit` if you want to manage `no-watermar.toml` yourself.
 
 When only one provider needs a different interpreter, use the per-slot overrides:
 

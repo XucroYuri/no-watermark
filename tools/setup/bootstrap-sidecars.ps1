@@ -7,6 +7,7 @@ param(
     [string]$PowerPaintPythonCommand = "",
     [string]$BrushNetPythonCommand = "",
     [switch]$StableOnly,
+    [switch]$SkipConfigInit,
     [switch]$InstallPackages,
     [switch]$PrintOnly
 )
@@ -31,6 +32,7 @@ function Invoke-Step {
 
 $projectRootPath = (Resolve-Path $ProjectRoot).Path
 $venvRoot = Join-Path $projectRootPath ".venvs"
+$configPath = Join-Path $projectRootPath "no-watermar.toml"
 $targets = @(
     @{
         Name = "paddleocr"
@@ -91,6 +93,17 @@ if (-not (Test-Path -LiteralPath $venvRoot)) {
     Invoke-Step "Create $venvRoot" { New-Item -ItemType Directory -Path $venvRoot | Out-Null }
 }
 
+if ($StableOnly -and -not $SkipConfigInit) {
+    if (Test-Path -LiteralPath $configPath) {
+        Write-Output "SKIP stable-public config already exists at $configPath"
+    }
+    else {
+        Invoke-Step "Initialize stable-public config at $configPath" {
+            & $PythonCommand -m no_watermar.cli config init --template stable-public --config $configPath
+        }
+    }
+}
+
 foreach ($target in $targets) {
     $venvPath = $target.Path
     $targetPythonCommand = $target.PythonCommand
@@ -132,6 +145,13 @@ if ($StableOnly) {
     Write-Output "NEXT Validate the stable public path:"
     Write-Output "NEXT   powershell -ExecutionPolicy Bypass -File .\\tools\\setup\\validate-sidecars.ps1 -StableOnly -RunDoctor"
     Write-Output "NEXT   powershell -ExecutionPolicy Bypass -File .\\tools\\benchmark\\run-release-smoke.ps1 -Limit 1"
+    if ($SkipConfigInit) {
+        Write-Output "NEXT Initialize the local stable config when needed:"
+        Write-Output "NEXT   python -m no_watermar.cli config init --template stable-public"
+    }
+    else {
+        Write-Output "NEXT The stable-public config template now seeds local_smoke, seed_telea, ocr_telea, lama_eval, and ocr_corner_crop profiles when no local config exists."
+    }
 }
 else {
     Write-Output "NEXT Install provider packages into each venv as needed."

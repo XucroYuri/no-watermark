@@ -131,11 +131,13 @@ Behavior:
 - `brushnet` expects a local BrushNet checkpoint either in `restore_options.brushnet_model_path` or `NO_WATERMAR_BRUSHNET_MODEL`
 
 Use `./no-watermar.toml.example` as a starting point for local presets.
+For the public stable setup path, `bootstrap-sidecars.ps1 -StableOnly` now initializes `no-watermar.toml` from the built-in `stable-public` template when no local config file exists yet.
 
 Bootstrap and inspect the local config with:
 
 ```powershell
 .\bin\no-watermar.ps1 config init --template default
+.\bin\no-watermar.ps1 config init --template stable-public
 .\bin\no-watermar.ps1 config init --template brand-social --config .\configs\brand.toml
 .\bin\no-watermar.ps1 config show
 .\bin\no-watermar.ps1 config validate
@@ -148,6 +150,7 @@ Built-in `config init` templates:
 - `brand-social`
 - `stock-marketplaces`
 - `mixed-corner-text`
+- `stable-public`
 
 Additional ready-made examples live under [docs/examples/config](./examples/config/README.md).
 
