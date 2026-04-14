@@ -34,6 +34,11 @@ restore_negative_prompt = "smear, blur, melted text, duplicated edges"
 steps = 30
 guidance_scale = 6.5
 
+[profiles.providers.lama_eval]
+mask_provider = "seed_manifest"
+restore_provider = "lama"
+ocr_session_mode = "auto"
+
 [profiles.providers.ocr_corner_crop]
 mask_provider = "paddleocr"
 restore_provider = "corner_crop"

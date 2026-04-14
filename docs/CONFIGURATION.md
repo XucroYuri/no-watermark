@@ -131,11 +131,13 @@ Behavior:
 - `brushnet` expects a local BrushNet checkpoint either in `restore_options.brushnet_model_path` or `NO_WATERMAR_BRUSHNET_MODEL`
 
 Use `./no-watermar.toml.example` as a starting point for local presets.
+For the public stable setup path, `bootstrap-sidecars.ps1 -StableOnly` now initializes `no-watermar.toml` from the built-in `stable-public` template when no local config file exists yet.
 
 Bootstrap and inspect the local config with:
 
 ```powershell
 .\bin\no-watermar.ps1 config init --template default
+.\bin\no-watermar.ps1 config init --template stable-public
 .\bin\no-watermar.ps1 config init --template brand-social --config .\configs\brand.toml
 .\bin\no-watermar.ps1 config show
 .\bin\no-watermar.ps1 config validate
@@ -148,6 +150,7 @@ Built-in `config init` templates:
 - `brand-social`
 - `stock-marketplaces`
 - `mixed-corner-text`
+- `stable-public`
 
 Additional ready-made examples live under [docs/examples/config](./examples/config/README.md).
 
@@ -167,13 +170,14 @@ Use dataset and provider profiles in the CLI with:
 .\bin\no-watermar.ps1 benchmark run --dataset-profile local_smoke --provider-profile seed_telea
 .\bin\no-watermar.ps1 benchmark aggregate --dataset-profile local_smoke --provider-profile seed_telea
 .\bin\no-watermar.ps1 benchmark trends --dataset-profile local_smoke --baseline-provider-profile seed_telea --candidate-provider-profile ocr_telea
+.\bin\no-watermar.ps1 benchmark evidence --dataset-profile local_smoke --baseline-provider-profile seed_telea --candidate-provider-profile ocr_telea --optional-provider-profile lama_eval --benchmark-root .\benchmarks --minimum-run-count 3
 ```
 
 CLI rules:
 
 - explicit CLI flags still override profile values
-- `scan show`, `scan run`, `batch plan`, `batch apply`, `benchmark prepare`, `benchmark run`, `benchmark aggregate`, and `benchmark trends` can all reuse `profiles.datasets.<name>`
-- provider profiles currently apply to `batch plan`, `batch apply`, `benchmark run`, `benchmark aggregate`, and `benchmark trends`
+- `scan show`, `scan run`, `batch plan`, `batch apply`, `benchmark prepare`, `benchmark run`, `benchmark aggregate`, `benchmark trends`, and `benchmark evidence` can all reuse `profiles.datasets.<name>`
+- provider profiles currently apply to `batch plan`, `batch apply`, `benchmark run`, `benchmark aggregate`, `benchmark trends`, and `benchmark evidence`
 - `batch plan --scan-manifest ...` and `batch apply --plan ...` remain explicit input contracts and reject mixed direct profile/input flags
 - batch and benchmark runs persist restore prompt and option fields so planned runs can be replayed consistently
 

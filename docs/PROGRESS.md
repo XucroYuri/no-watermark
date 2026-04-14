@@ -38,6 +38,7 @@
 - Aggregate summaries now roll up repeated benchmark runs by dataset and provider pair
 - Benchmark trend snapshots now merge the latest compare output with aggregate baselines into JSON and Markdown summaries
 - Release smoke script now drives list, baseline run, OCR-backed run, compare, and aggregate in one local command
+- Release-blocking stable evidence now captures a ready-state `paddleocr + telea` bundle on the public synthetic fixture, with the optional `seed_manifest + lama` comparison bundled alongside it
 - `lama` sidecar rebuilt on Python `3.12` and validated with `simple_lama_inpainting`
 - Model-backed `seed_manifest + lama` smoke benchmark now runs successfully through the release smoke script
 - `providers doctor` now reports sidecar interpreter versions against a documented compatibility matrix
@@ -99,21 +100,36 @@
 - Changed interrupted batch runs to persist `run_status = interrupted` plus partial result state for later resume
 - Changed batch run JSON persistence to use atomic file replacement, and changed `batch report` / `batch resume` loading to fall back from a truncated `summary.json` to `reports/report.json`
 - Added confirmation-aware `batch apply --plan` flows with interactive confirm, `--yes`, and `--no-input`
+- Added public provider support metadata so descriptors and `providers doctor` now report `support_tier`, validated platforms, and a recommended entrypoint
+- Added packaging metadata for public CLI distribution, including extras for OCR, LaMa, experimental providers, and release tooling
+- Added tracked repository tests plus CI movement toward an install-first validation path instead of source-path-only execution
+- Added a stable-only sidecar bootstrap and validation path, with `providers doctor` now reporting release-blocking stable readiness plus optional `lama` gaps
+- Tightened the release smoke wrapper so it now stops early when the release-blocking stable OCR path is not ready
+- Added release build automation with a local packaging helper, CI package checks, and a tag-driven GitHub Release plus PyPI workflow
+- Added `benchmark evidence` plus `capture-stable-baseline.ps1` so repeated stable benchmark runs now collapse into one release-oriented JSON and Markdown evidence bundle
+- Added a repo-native disposable benchmark fixture plus `capture-disposable-evidence.py`, and wired that sidecar-free evidence path into CI, release preflight, and release build artifacts
+- Added a `stable-public` config template, and changed the stable sidecar bootstrap path to initialize that local config automatically when `no-watermar.toml` does not exist yet
+- Added evidence zip packaging plus GitHub Release asset wiring so disposable benchmark evidence is no longer just a raw workflow directory artifact
+- Fixed the stable bootstrap path so repo config initialization no longer depends on the sidecar interpreter override, and external bootstrap failures now stop the script immediately
+- Changed benchmark runs to reject empty prepared datasets before they start provider sidecars, which turns release smoke on empty inputs into a fast configuration error instead of a long hang
+- Fixed stable runtime probing so `providers doctor` now requires the Paddle runtime dependency instead of treating a bare `paddleocr` import as release-ready
 
 ## In Progress
 
 - Converting provider hooks into reproducible model environments
 - Reducing OCR scoring overhead in real model-backed runs
 - Formalizing release discipline for a reusable public project
-- Turning the current `lama` validation path into a more reproducible setup recipe
+- Hardening the Windows-first public CLI support matrix while keeping heavy model providers experimental
+- Finishing the reproducible public `lama` recipe on top of the new stable bootstrap path
+- Preparing the repository-side trusted publishing configuration needed for the first live automated release
 - Reviewing the current 2-image `brushnet` tuning shortlist through the new local review bundle against `ocr_telea` and the original `ocr_brushnet` baseline
 - Deciding whether any tuned `brushnet` variant is subjectively strong enough to justify a wider slice despite the current metric regressions
 
 ## Next Milestones
 
 - Ship the first reproducible OCR-backed benchmark run with persistent sidecar reuse on real local samples
-- Capture the first documented larger-sample trend snapshot for OCR-backed and model-backed runs
-- Turn the current `lama` setup into a cleaner reproducible recipe with compatibility notes
+- Archive the first stable public evidence bundle beside the disposable automation bundle on the first tagged release
+- Turn the current optional stable `lama` path into a one-command reproducible recipe with compatibility notes
 - Turn the new diffusion-backed 10-image snapshot into a human-reviewed provider decision
 - Turn the new persistent `ocr_powerpaint_v21` 2-image snapshot into a human-reviewed provider decision before scaling it to a larger slice
 

@@ -9,14 +9,28 @@
 
 ## Validation
 
+- Run `python -m pip install -e .[dev]`
+- Run `powershell -ExecutionPolicy Bypass -File .\tools\releases\build-release.ps1 -CleanDist`
+- Confirm `.\runtime\release-preflight\disposable-evidence\benchmarks\evidence\latest.json` exists after the local preflight helper finishes
+- Confirm `.\runtime\release-preflight\disposable-evidence\package\*.zip` exists after the local preflight helper finishes
+- Run `python -m no_watermar.cli --help`
 - Run `python -m unittest discover -s tests -v`
 - Run `python .\benchmark.py list-providers`
 - Run `python .\benchmark.py probe-providers`
+- Run `powershell -ExecutionPolicy Bypass -File .\tools\setup\validate-sidecars.ps1 -StableOnly -RunDoctor`
+- Confirm `.\inputs` or the selected local disposable test set contains at least one benchmark image before smoke/evidence commands
 - Run at least one baseline smoke command against `.\inputs` or a local disposable test set
 - Run `powershell -ExecutionPolicy Bypass -File .\tools\benchmark\run-release-smoke.ps1 -Limit 1`
+- Run `powershell -ExecutionPolicy Bypass -File .\tools\benchmark\capture-stable-baseline.ps1 -Repetitions 3`
+- Confirm stable providers report the expected `support_tier` and validated platforms through `providers list` or `providers doctor`
+- Confirm `providers doctor` reports `stable_setup.release_blocking_ready = true`
+- Confirm the disposable evidence bundle stays `status = ready` as a sidecar-free regression check
+- Confirm `.\benchmarks\evidence\latest.json` reports `status = ready` or `status = release_blocking_ready`
+- Save `.\benchmarks\evidence\latest.json` and `.\benchmarks\evidence\latest.md` as the release evidence bundle
+- Confirm experimental providers are clearly marked and are not required for the default public smoke path
 - Verify provider failures remain graceful when sidecar environments are absent
 - If using aggregation windows for release review, capture `benchmark.py aggregate` output with provider filters
-- If compare and aggregate outputs are part of the release evidence, capture a `benchmark trends` snapshot under `.\benchmarks\trends\`
+- If compare and aggregate outputs are part of the release evidence, confirm the evidence bundle links to the expected comparison and trend artifacts under `.\benchmarks\comparisons\` and `.\benchmarks\trends\`
 
 ## Docs And Metadata
 
@@ -30,6 +44,7 @@
 - Create a release commit with only intended source and doc changes
 - Create an annotated tag matching the target version
 - Draft release notes using the changelog and merged pull request summaries
+- Confirm `.github/workflows/release.yml` is ready to publish from the release tag and that the `pypi` environment is configured for trusted publishing
 
 ## Post Release
 

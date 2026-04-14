@@ -8,6 +8,17 @@ The format is based on Keep a Changelog.
 
 ### Added
 
+- Added provider public-support metadata so CLI descriptors and `providers doctor` now report `support_tier`, validated platforms, and a recommended entrypoint
+- Added tracked repository tests and public packaging metadata for install-first validation
+- Added a `stable_setup` section to `providers doctor` so the public stable sidecar path now reports release-blocking readiness, optional stable gaps, and the next bootstrap or smoke commands
+- Added a local `tools\releases\build-release.ps1` helper plus a tag-driven GitHub Release and PyPI workflow for packaging automation
+- Added `benchmark evidence` and `tools\benchmark\capture-stable-baseline.ps1` so repeated stable benchmark runs now produce one release-ready evidence bundle with JSON and Markdown outputs
+- Added a repo-native disposable benchmark fixture plus `tools\benchmark\capture-disposable-evidence.py`, and wired that sidecar-free evidence path into CI, release preflight, and release build artifacts
+- Added a `stable-public` config template and automatic stable-config initialization during `bootstrap-sidecars.ps1 -StableOnly`
+- Added `tools\releases\package-evidence.py` so disposable evidence can be archived as a release-ready zip bundle and attached to GitHub Releases
+- Added bootstrap regression coverage so stable sidecar setup now keeps repository config initialization on the repo CLI interpreter and fails fast when external bootstrap commands return non-zero exit codes
+- Added benchmark regression coverage so empty datasets now fail before OCR sidecars start
+
 - Added persistent `paddleocr` sidecar session support for benchmark runs
 - Added benchmark report aggregation across repeated runs
 - Added aggregation filters for provider pairs and run-id windows
@@ -57,6 +68,15 @@ The format is based on Keep a Changelog.
 - Added a local `ocr_fluxfill_fp8` profile for the first low-memory diffusion restore attempt
 
 ### Changed
+
+- Changed CI to validate the editable package and CLI entrypoint across Windows and Linux runners
+- Changed the public docs to center the professional CLI path and to separate stable providers from experimental restore providers
+- Changed setup helpers and release smoke docs to start from a stable-only `paddleocr` plus optional `lama` bootstrap and validation path
+- Changed the release smoke PowerShell wrapper to fail fast when the release-blocking stable OCR path is not ready
+- Changed CI to run package build and `twine check` validation before the release workflow can publish artifacts
+- Changed the release checklist and process docs to treat the stable evidence bundle as the default benchmark proof for release decisions
+- Changed the local release helper to capture disposable stable evidence automatically before packaging
+- Changed `run_benchmark` to reject empty prepared datasets before any provider sidecars are created
 
 - Changed planned batch apply to consume the item list stored in the plan instead of rescanning the input root
 - Changed the root CLI module entrypoint to auto-load the repo-local `.env` file like the legacy wrappers

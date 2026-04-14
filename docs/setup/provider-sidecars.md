@@ -12,6 +12,21 @@ The baseline repository stays lightweight on purpose. Heavy OCR, segmentation, a
 - `NO_WATERMAR_POWERPAINT_PYTHON`
 - `NO_WATERMAR_BRUSHNET_PYTHON`
 
+## Public Support Tiers
+
+- Stable sidecars: `paddleocr`, `lama`
+- Experimental sidecars: `diffusers_inpaint`, `powerpaint_v2_1`, `brushnet`
+
+`providers doctor` now reports `support_tier`, validated platforms, the recommended entrypoint for each provider slot, and a `stable_setup` section that tells you whether the release-blocking stable sidecars are ready.
+
+## Stable Public Path
+
+- Release-blocking stable sidecar: `paddleocr`
+- Optional stable sidecar: `lama`
+- Experimental local-only sidecars: `diffusers_inpaint`, `powerpaint_v2_1`, `brushnet`
+
+The public setup flow should start with the stable path first. Experimental sidecars stay out of the default release smoke path.
+
 ## Recommended Layout
 
 ```text
@@ -35,24 +50,33 @@ tools/
 Create the default virtual environments:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1
+powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -StableOnly -InstallPackages
 ```
 
 Validate interpreter discovery:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\setup\validate-sidecars.ps1
-.\bin\no-watermar.ps1 providers doctor
+powershell -ExecutionPolicy Bypass -File .\tools\setup\validate-sidecars.ps1 -StableOnly -RunDoctor
 ```
+
+That validation path surfaces:
+
+- `stable_setup.release_blocking_ready`
+- `stable_setup.blocking_issues`
+- `stable_setup.optional_issues`
+- the exact next commands for stable bootstrap, validation, and release smoke
 
 When one provider needs a different base interpreter, override it explicitly during bootstrap:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -LamaPythonCommand "C:\Path\To\Python312\python.exe"
+powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -StableOnly -InstallPackages -ConfigPythonCommand "C:\Path\To\Repo\python.exe"
+powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -StableOnly -InstallPackages -LamaPythonCommand "C:\Path\To\Python312\python.exe"
 powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -DiffusersPythonCommand "C:\Path\To\Python311\python.exe"
 powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -PowerPaintPythonCommand "C:\Path\To\Python312\python.exe"
 powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -BrushNetPythonCommand "C:\Path\To\Python39\python.exe"
 ```
+
+`-ConfigPythonCommand` is only for repository-local CLI actions such as `config init`. Use the per-provider overrides when the sidecar virtual environments should be created from a different interpreter than the repo bootstrap environment.
 
 ## Environment Variables
 
@@ -143,9 +167,26 @@ After configuring the sidecar interpreters, validate at least:
 
 ```powershell
 .\bin\no-watermar.ps1 providers doctor
+powershell -ExecutionPolicy Bypass -File .\tools\setup\validate-sidecars.ps1 -StableOnly -RunDoctor
 python .\benchmark.py list-providers
 python .\benchmark.py probe-providers
 python .\benchmark.py prepare --input .\inputs
+python .\benchmark.py run --dataset regular_corner_text --mask-provider paddleocr --restore-provider telea --ocr-session-mode persistent
+powershell -ExecutionPolicy Bypass -File .\tools\benchmark\run-release-smoke.ps1 -Limit 1
+```
+
+If you also want the optional stable model-backed restore path:
+
+```powershell
+python .\benchmark.py run --dataset regular_corner_text --mask-provider seed_manifest --restore-provider lama --ocr-session-mode persistent
+powershell -ExecutionPolicy Bypass -File .\tools\benchmark\run-release-smoke.ps1 -Limit 1 -RequireLama
+```
+
+The first public release path now treats the `paddleocr + telea` smoke path as release-blocking. `lama` remains on the stable support track, but it is an opt-in stable extension until the public release checklist explicitly requires `-RequireLama`. The diffusion-backed commands remain opt-in local evaluation steps.
+
+For the experimental diffusion-backed validation path, use explicit local-only commands such as:
+
+```powershell
 python .\benchmark.py run --dataset regular_corner_text --mask-provider paddleocr --restore-provider diffusers_inpaint --ocr-session-mode persistent
 python .\benchmark.py run --dataset regular_corner_text --mask-provider paddleocr --restore-provider powerpaint_v2_1 --ocr-session-mode persistent
 python .\benchmark.py run --dataset regular_corner_text --mask-provider paddleocr --restore-provider brushnet --ocr-session-mode persistent
@@ -174,4 +215,5 @@ For a release-oriented local smoke pass that includes baseline, OCR-backed run, 
 powershell -ExecutionPolicy Bypass -File .\tools\benchmark\run-release-smoke.ps1 -Limit 1
 ```
 
-The smoke script now checks `lama` availability from `probe-providers`. If the interpreter exists but the `simple_lama` module is missing, the script skips the model-backed restore smoke run and prints the concrete import failure.
+The smoke script now fails fast when the release-blocking stable `paddleocr` setup is not ready, and it still checks `lama` availability from `probe-providers`. If the interpreter exists but the `simple_lama` module is missing, the script skips the model-backed restore smoke run unless `-RequireLama` is set.
+It also fails fast when the selected dataset has no benchmark items, instead of starting provider sidecars against an empty manifest.

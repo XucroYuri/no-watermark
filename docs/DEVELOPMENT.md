@@ -5,7 +5,7 @@
 Baseline development:
 
 ```powershell
-python -m pip install -r .\requirements.txt
+python -m pip install -e .[dev]
 python -m unittest discover -s tests -v
 ```
 
@@ -16,6 +16,8 @@ python -m unittest discover -s tests -v
 - Prefer ASCII in code and config unless existing files already use Unicode
 - Use provider abstractions for heavyweight integrations
 - Keep benchmark artifacts local and disposable
+- Treat `no-watermar` as the primary public CLI entrypoint
+- Keep the stable provider matrix operator-safe; treat model-backed restore providers as experimental unless explicitly promoted
 
 ## Local Commands
 
@@ -51,12 +53,17 @@ Benchmark setup:
 .\bin\no-watermar.ps1 benchmark compare --baseline-report .\benchmarks\path\baseline.json --candidate-report .\benchmarks\path\candidate.json
 .\bin\no-watermar.ps1 benchmark aggregate --dataset-profile local_smoke --provider-profile seed_telea --reports-root .\benchmarks\runs
 .\bin\no-watermar.ps1 benchmark trends --dataset-profile local_smoke --baseline-provider-profile seed_telea --candidate-provider-profile ocr_telea --benchmark-root .\benchmarks
+.\bin\no-watermar.ps1 benchmark evidence --dataset-profile local_smoke --baseline-provider-profile seed_telea --candidate-provider-profile ocr_telea --optional-provider-profile lama_eval --benchmark-root .\benchmarks --minimum-run-count 3
 .\bin\no-watermar.ps1 benchmark aggregate --reports-root .\benchmarks\runs --dataset regular_corner_text --mask-provider seed_manifest --restore-provider telea
 .\bin\no-watermar.ps1 benchmark trends --dataset regular_corner_text --baseline-mask-provider seed_manifest --baseline-restore-provider telea --candidate-mask-provider paddleocr --candidate-restore-provider telea
 powershell -ExecutionPolicy Bypass -File .\tools\benchmark\run-release-smoke.ps1 -Limit 1
+powershell -ExecutionPolicy Bypass -File .\tools\benchmark\capture-stable-baseline.ps1 -Repetitions 3
+python .\tools\benchmark\capture-disposable-evidence.py --clean
 ```
 
 `benchmark trends` auto-resolves the latest matching compare and aggregate artifacts and writes a versioned JSON/Markdown snapshot plus `latest.json` / `latest.md` under `.\benchmarks\trends\`.
+`benchmark evidence` takes the repeated stable runs already stored under the benchmark root and writes a release-oriented JSON/Markdown summary plus `latest.json` / `latest.md` under `.\benchmarks\evidence\`.
+`capture-disposable-evidence.py` produces the repo-native synthetic corpus plus a sidecar-free repeated evidence bundle under `.\runtime\disposable-evidence\`.
 Dataset and provider profiles from `no-watermar.toml` can now drive the same scan, batch, and benchmark flows without repeating the same CLI argument sets.
 For private real-local slices, point `--benchmark-root` at a dedicated ignored subdirectory so compare, aggregate, and trend artifacts stay isolated per dataset.
 Provider profiles can now also carry `restore_prompt`, `restore_negative_prompt`, and `restore_options`, and those fields are persisted through batch plans, batch runs, and benchmark summaries.
@@ -70,7 +77,7 @@ That support is now intentionally frozen at the profile level on the current 16 
 The current FP8 attempt should prefer the `diffusers` sidecar because the local `diffusers` environment already exposes `enable_layerwise_casting()` and float8 dtypes, while the repository-local PowerPaint / BrushNet fork still sits on diffusers `0.27.0` without that API.
 For repeated visual checks, `python .\tools\benchmark\build-review-bundle.py --report ... --label ... --output ...` now assembles a side-by-side local review bundle with the original inputs, seed artifacts, provider masks, overlays, restored images, and copied compare/trend artifacts. Use `--label` when you are comparing multiple runs from the same provider family, such as several `brushnet` tuning variants.
 
-Legacy wrappers remain available during migration:
+Legacy wrappers remain available during migration, but do not add new public docs that depend on them:
 
 - `python .\run.py ...`
 - `python .\benchmark.py ...`

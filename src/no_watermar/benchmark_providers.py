@@ -8,7 +8,7 @@ import os
 import subprocess
 import sys
 import tempfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from time import perf_counter
 from typing import Any, Protocol
@@ -31,7 +31,13 @@ from .benchmark_models import BenchmarkDatasetItem, MaskResult, RestoreResult
 from .detector import detect_watermarks
 from .io_utils import read_image, read_mask, write_image
 from .models import ScanItem
-from .provider_runtime import probe_current_module, probe_python_module, summarize_probe
+from .provider_runtime import (
+    probe_current_module,
+    probe_current_runtime,
+    probe_python_module,
+    probe_python_runtime,
+    summarize_probe,
+)
 from .restorer import crop_image_to_remove_corner_watermark, restore_regular_image
 
 
@@ -64,8 +70,81 @@ class RestoreProvider(Protocol):
         prompt: str | None = None,
         negative_prompt: str | None = None,
         meta: dict[str, Any] | None = None,
-    ) -> RestoreResult:
+        ) -> RestoreResult:
         ...
+
+
+PROVIDER_PUBLIC_METADATA: dict[str, dict[str, Any]] = {
+    "rule_based_roi": {
+        "support_tier": "stable",
+        "validated_platforms": ["windows", "linux"],
+        "recommended_entrypoint": "no-watermar batch apply",
+    },
+    "seed_manifest": {
+        "support_tier": "stable",
+        "validated_platforms": ["windows", "linux"],
+        "recommended_entrypoint": "no-watermar benchmark run",
+    },
+    "paddleocr": {
+        "support_tier": "stable",
+        "validated_platforms": ["windows"],
+        "recommended_entrypoint": "no-watermar batch apply",
+    },
+    "edgesam": {
+        "support_tier": "planned",
+        "validated_platforms": [],
+        "recommended_entrypoint": None,
+    },
+    "watermark_segmentation": {
+        "support_tier": "planned",
+        "validated_platforms": [],
+        "recommended_entrypoint": None,
+    },
+    "telea": {
+        "support_tier": "stable",
+        "validated_platforms": ["windows", "linux"],
+        "recommended_entrypoint": "no-watermar batch apply",
+    },
+    "corner_crop": {
+        "support_tier": "stable",
+        "validated_platforms": ["windows", "linux"],
+        "recommended_entrypoint": "no-watermar batch apply",
+    },
+    "noop": {
+        "support_tier": "stable",
+        "validated_platforms": ["windows", "linux"],
+        "recommended_entrypoint": "no-watermar benchmark run",
+    },
+    "lama": {
+        "support_tier": "stable",
+        "validated_platforms": ["windows"],
+        "recommended_entrypoint": "no-watermar batch apply",
+    },
+    "diffusers_inpaint": {
+        "support_tier": "experimental",
+        "validated_platforms": ["windows"],
+        "recommended_entrypoint": "no-watermar benchmark run",
+    },
+    "powerpaint_v2_1": {
+        "support_tier": "experimental",
+        "validated_platforms": ["windows"],
+        "recommended_entrypoint": "no-watermar benchmark run",
+    },
+    "brushnet": {
+        "support_tier": "experimental",
+        "validated_platforms": ["windows"],
+        "recommended_entrypoint": "no-watermar benchmark run",
+    },
+}
+
+
+def get_provider_public_metadata(name: str) -> dict[str, Any]:
+    entry = PROVIDER_PUBLIC_METADATA.get(name) or {}
+    return {
+        "support_tier": str(entry.get("support_tier") or "planned"),
+        "validated_platforms": list(entry.get("validated_platforms") or []),
+        "recommended_entrypoint": entry.get("recommended_entrypoint"),
+    }
 
 
 @dataclass(frozen=True, slots=True)
@@ -80,6 +159,9 @@ class ProviderDescriptor:
     runtime_available: bool
     runtime_note: str | None = None
     runtime_probe: dict[str, Any] | None = None
+    support_tier: str = "planned"
+    validated_platforms: list[str] = field(default_factory=list)
+    recommended_entrypoint: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -93,6 +175,9 @@ class ProviderDescriptor:
             "runtime_available": self.runtime_available,
             "runtime_note": self.runtime_note,
             "runtime_probe": self.runtime_probe,
+            "support_tier": self.support_tier,
+            "validated_platforms": self.validated_platforms,
+            "recommended_entrypoint": self.recommended_entrypoint,
         }
 
 
@@ -624,9 +709,9 @@ def list_provider_descriptors() -> dict[str, list[dict[str, Any]]]:
     powerpaint_available, powerpaint_note, powerpaint_probe = _describe_powerpaint_runtime()
     brushnet_available, brushnet_note, brushnet_probe = _describe_brushnet_runtime()
     mask_descriptors = [
-        ProviderDescriptor("rule_based_roi", "mask", "Current ROI + morphology detector", True, ["inprocess"], "inprocess", [], True),
-        ProviderDescriptor("seed_manifest", "mask", "Loads prepared seed masks from benchmark dataset", True, ["inprocess"], "inprocess", [], True),
-        ProviderDescriptor(
+        _descriptor("rule_based_roi", "mask", "Current ROI + morphology detector", True, ["inprocess"], "inprocess", [], True),
+        _descriptor("seed_manifest", "mask", "Loads prepared seed masks from benchmark dataset", True, ["inprocess"], "inprocess", [], True),
+        _descriptor(
             "paddleocr",
             "mask",
             "OCR-backed detector via local import or NO_WATERMAR_PADDLEOCR_PYTHON sidecar",
@@ -638,12 +723,12 @@ def list_provider_descriptors() -> dict[str, list[dict[str, Any]]]:
             paddle_note,
             paddle_probe,
         ),
-        ProviderDescriptor("edgesam", "mask", "Planned prompt-guided segmentation provider", False, [], None, [], False, "Planned provider."),
-        ProviderDescriptor("watermark_segmentation", "mask", "Planned dedicated watermark segmentation provider", False, [], None, [], False, "Planned provider."),
+        _descriptor("edgesam", "mask", "Planned prompt-guided segmentation provider", False, [], None, [], False, "Planned provider."),
+        _descriptor("watermark_segmentation", "mask", "Planned dedicated watermark segmentation provider", False, [], None, [], False, "Planned provider."),
     ]
     restore_descriptors = [
-        ProviderDescriptor("telea", "restore", "Current OpenCV Telea baseline", True, ["inprocess"], "inprocess", [], True),
-        ProviderDescriptor(
+        _descriptor("telea", "restore", "Current OpenCV Telea baseline", True, ["inprocess"], "inprocess", [], True),
+        _descriptor(
             "corner_crop",
             "restore",
             "Crops the nearest image edge to remove a detected corner watermark",
@@ -653,8 +738,8 @@ def list_provider_descriptors() -> dict[str, list[dict[str, Any]]]:
             [],
             True,
         ),
-        ProviderDescriptor("noop", "restore", "Mask-only benchmark placeholder", True, ["inprocess"], "inprocess", [], True),
-        ProviderDescriptor(
+        _descriptor("noop", "restore", "Mask-only benchmark placeholder", True, ["inprocess"], "inprocess", [], True),
+        _descriptor(
             "lama",
             "restore",
             "LaMa sidecar via local import or NO_WATERMAR_LAMA_PYTHON",
@@ -666,7 +751,7 @@ def list_provider_descriptors() -> dict[str, list[dict[str, Any]]]:
             lama_note,
             lama_probe,
         ),
-        ProviderDescriptor(
+        _descriptor(
             "diffusers_inpaint",
             "restore",
             "Prompt-driven HuggingFace diffusers inpainting via local import or NO_WATERMAR_DIFFUSERS_PYTHON",
@@ -678,7 +763,7 @@ def list_provider_descriptors() -> dict[str, list[dict[str, Any]]]:
             diffusers_note,
             diffusers_probe,
         ),
-        ProviderDescriptor(
+        _descriptor(
             "powerpaint_v2_1",
             "restore",
             "PowerPaint v2.1 object-removal inpainting via local import or NO_WATERMAR_POWERPAINT_PYTHON",
@@ -690,7 +775,7 @@ def list_provider_descriptors() -> dict[str, list[dict[str, Any]]]:
             powerpaint_note,
             powerpaint_probe,
         ),
-        ProviderDescriptor(
+        _descriptor(
             "brushnet",
             "restore",
             "BrushNet SD1.5 inpainting via upstream diffusers fork or NO_WATERMAR_BRUSHNET_PYTHON sidecar",
@@ -707,6 +792,36 @@ def list_provider_descriptors() -> dict[str, list[dict[str, Any]]]:
         "mask_providers": [descriptor.to_dict() for descriptor in mask_descriptors],
         "restore_providers": [descriptor.to_dict() for descriptor in restore_descriptors],
     }
+
+
+def _descriptor(
+    name: str,
+    kind: str,
+    summary: str,
+    implemented: bool,
+    execution_modes: list[str],
+    default_mode: str | None,
+    required_env_vars: list[str],
+    runtime_available: bool,
+    runtime_note: str | None = None,
+    runtime_probe: dict[str, Any] | None = None,
+) -> ProviderDescriptor:
+    public_metadata = get_provider_public_metadata(name)
+    return ProviderDescriptor(
+        name=name,
+        kind=kind,
+        summary=summary,
+        implemented=implemented,
+        execution_modes=execution_modes,
+        default_mode=default_mode,
+        required_env_vars=required_env_vars,
+        runtime_available=runtime_available,
+        runtime_note=runtime_note,
+        runtime_probe=runtime_probe,
+        support_tier=str(public_metadata["support_tier"]),
+        validated_platforms=list(public_metadata["validated_platforms"]),
+        recommended_entrypoint=public_metadata["recommended_entrypoint"],
+    )
 
 
 def probe_provider_runtimes() -> dict[str, Any]:
@@ -1075,7 +1190,7 @@ def _run_sidecar(*, python_executable: str, script_path: Path, arguments: list[s
 
 def _describe_paddleocr_runtime() -> tuple[bool, str, dict[str, Any]]:
     if _module_available("paddleocr"):
-        probe = probe_current_module("paddleocr")
+        probe = probe_current_runtime("paddleocr", required_modules=["paddle"])
         available, note = summarize_probe("PaddleOCR", probe)
         return available, note, probe
 
@@ -1093,7 +1208,7 @@ def _describe_paddleocr_runtime() -> tuple[bool, str, dict[str, Any]]:
         }
         return False, note, probe
 
-    probe = probe_python_module(python_executable, "paddleocr")
+    probe = probe_python_runtime(python_executable, "paddleocr", required_modules=["paddle"])
     available, summarized = summarize_probe("PaddleOCR", probe)
     return available, summarized, probe
 

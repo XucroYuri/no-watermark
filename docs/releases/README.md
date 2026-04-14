@@ -8,6 +8,7 @@ This directory contains the release governance for `no-watermar`.
 - [Versioning Policy](./versioning-policy.md)
 - [Release Process](./release-process.md)
 - [Public Release Readiness](./public-release-readiness.md)
+- [Local Release Helper](../../tools/releases/README.md)
 
 ## Scope
 

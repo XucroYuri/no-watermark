@@ -80,6 +80,44 @@ generic_corner_text = [
   "do not repost",
 ]
 """,
+    "stable-public": """[watermark_keywords]
+active_presets = ["stock_sites"]
+
+[watermark_keywords.presets]
+stock_sites = [
+  "example.com",
+  "rights reserved",
+]
+
+[profiles.datasets.local_smoke]
+input = "./inputs"
+recursive = false
+limit = 2
+benchmark_dataset = "regular_corner_text"
+
+[profiles.providers.seed_telea]
+mask_provider = "seed_manifest"
+restore_provider = "telea"
+ocr_session_mode = "auto"
+
+[profiles.providers.ocr_telea]
+mask_provider = "paddleocr"
+restore_provider = "telea"
+ocr_session_mode = "persistent"
+
+[profiles.providers.lama_eval]
+mask_provider = "seed_manifest"
+restore_provider = "lama"
+ocr_session_mode = "auto"
+
+[profiles.providers.ocr_corner_crop]
+mask_provider = "paddleocr"
+restore_provider = "corner_crop"
+ocr_session_mode = "persistent"
+
+[profiles.providers.ocr_corner_crop.restore_options]
+edge_tolerance = 24
+""",
 }
 
 

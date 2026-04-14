@@ -10,7 +10,8 @@ Prepare the repository for a first broadly shareable public milestone, tentative
 - Stable baseline CLI and benchmark scaffold
 - Contributor-facing documentation complete enough for external onboarding
 - Release checklist and versioning policy in place
-- CI passing on the supported baseline Python versions
+- CI passing on the supported baseline Python versions and platforms
+- Stable provider tiers clearly separated from experimental ones in the public CLI and docs
 
 ## Recommended Conditions
 
@@ -18,13 +19,13 @@ Prepare the repository for a first broadly shareable public milestone, tentative
 - At least one documented model-backed restore flow
 - Windows setup guidance for sidecar environments
 - Example configuration patterns for common watermark layouts
+- A redistributable disposable benchmark corpus for automation-only regression evidence
 
 ## Open Gaps
 
-- Provider environment reproducibility is not yet packaged
-- Benchmark reporting still needs stronger quality metrics
-- Release smoke tests now cover baseline, OCR-backed, and `lama`-backed benchmark paths, but only for the currently validated local sidecar recipe
-- Packaging and distribution artifacts are not yet automated
+- Stable sidecar reproducibility is now validated on the Windows-first public fixture path, but Linux parity and broader cross-machine packaging still lag that path
+- Benchmark reporting still needs stronger quality metrics beyond the current repeated-run evidence bundles
+- Repository-side trusted publishing still needs to be enabled in GitHub and PyPI before the first live automated release
 
 ## Exit Definition
 

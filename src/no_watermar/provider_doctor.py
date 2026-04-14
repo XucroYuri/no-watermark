@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from .benchmark_providers import list_provider_descriptors
+from .benchmark_providers import get_provider_public_metadata, list_provider_descriptors
 from .env_loader import read_local_env_file
 from .provider_runtime import probe_python_info
 
@@ -104,6 +104,29 @@ SIDECAR_COMPATIBILITY = {
     },
 }
 
+STABLE_SETUP_TARGETS = {
+    "paddleocr": {
+        "required_for_release": True,
+        "packages": ["paddleocr"],
+        "post_install_notes": [
+            "Install the matching Paddle runtime for the target machine after paddleocr is present.",
+        ],
+    },
+    "lama": {
+        "required_for_release": False,
+        "packages": ["simple-lama-inpainting"],
+        "post_install_notes": [
+            "Use a validated Python 3.12 sidecar when the default shell interpreter is newer than the supported LaMa stack.",
+        ],
+    },
+}
+
+STABLE_SETUP_COMMANDS = [
+    r"powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -StableOnly -InstallPackages",
+    r"powershell -ExecutionPolicy Bypass -File .\tools\setup\validate-sidecars.ps1 -StableOnly -RunDoctor",
+    r"powershell -ExecutionPolicy Bypass -File .\tools\benchmark\run-release-smoke.ps1 -Limit 1",
+]
+
 
 def build_provider_doctor_report(project_root: Path | None = None) -> dict[str, Any]:
     resolved_project_root = (project_root or Path(__file__).resolve().parents[2]).resolve()
@@ -121,8 +144,11 @@ def build_provider_doctor_report(project_root: Path | None = None) -> dict[str, 
         )
         for slot in SIDECAR_SLOTS
     ]
+    stable_setup = _build_stable_setup(sidecars)
     warnings = _collect_warnings(sidecars=sidecars, env_path=env_path, env_file_values=env_file_values)
-    recommendations = _collect_recommendations(sidecars)
+    recommendations = _unique_preserve_order(
+        _collect_recommendations(sidecars) + _build_stable_setup_recommendations(stable_setup)
+    )
     return {
         "status": "ok",
         "project_root": str(resolved_project_root),
@@ -142,6 +168,7 @@ def build_provider_doctor_report(project_root: Path | None = None) -> dict[str, 
         "restore_providers": descriptors["restore_providers"],
         "compatibility_matrix": _build_compatibility_matrix(resolved_project_root),
         "sidecars": sidecars,
+        "stable_setup": stable_setup,
         "warnings": warnings,
         "recommendations": recommendations,
     }
@@ -189,6 +216,9 @@ def _describe_sidecar_slot(
         "runtime_probe": descriptor.get("runtime_probe") if descriptor else None,
         "default_mode": descriptor.get("default_mode") if descriptor else None,
         "execution_modes": list(descriptor.get("execution_modes") or []) if descriptor else [],
+        "support_tier": _provider_field(descriptor, provider_name, "support_tier"),
+        "validated_platforms": _provider_field(descriptor, provider_name, "validated_platforms"),
+        "recommended_entrypoint": _provider_field(descriptor, provider_name, "recommended_entrypoint"),
         "compatibility": compatibility,
     }
 
@@ -233,6 +263,12 @@ def _collect_recommendations(sidecars: list[dict[str, Any]]) -> list[str]:
         env_var = sidecar["env_var"]
         provider_name = sidecar["provider_name"]
         runtime_probe = sidecar.get("runtime_probe") or {}
+        support_tier = sidecar.get("support_tier")
+        if support_tier == "experimental" and not sidecar["configured_python"] and not sidecar["runtime_available"]:
+            recommendations.append(
+                f"{provider_name} is experimental. Configure {env_var} only when evaluating model-backed restore locally."
+            )
+            continue
         if not sidecar["configured_python"] and not sidecar["runtime_available"]:
             recommendations.append(
                 f"Configure {env_var} for {provider_name} or install the provider directly in the current Python environment."
@@ -274,6 +310,122 @@ def _collect_recommendations(sidecars: list[dict[str, Any]]) -> list[str]:
     return _unique_preserve_order(recommendations)
 
 
+def _build_stable_setup(sidecars: list[dict[str, Any]]) -> dict[str, Any]:
+    stable_sidecars = {
+        sidecar["provider_name"]: sidecar
+        for sidecar in sidecars
+        if sidecar["provider_name"] in STABLE_SETUP_TARGETS
+    }
+    bootstrap_targets = [
+        _build_stable_setup_target(provider_name, stable_sidecars.get(provider_name))
+        for provider_name in STABLE_SETUP_TARGETS
+    ]
+    release_blocking_providers = [
+        provider_name
+        for provider_name, spec in STABLE_SETUP_TARGETS.items()
+        if bool(spec["required_for_release"])
+    ]
+    optional_providers = [
+        provider_name
+        for provider_name, spec in STABLE_SETUP_TARGETS.items()
+        if not bool(spec["required_for_release"])
+    ]
+    blocking_issues = [
+        issue
+        for provider_name in release_blocking_providers
+        if (issue := _describe_stable_setup_issue(stable_sidecars.get(provider_name))) is not None
+    ]
+    optional_issues = [
+        issue
+        for provider_name in optional_providers
+        if (issue := _describe_stable_setup_issue(stable_sidecars.get(provider_name))) is not None
+    ]
+    release_blocking_ready = len(blocking_issues) == 0
+    optional_ready = len(optional_issues) == 0
+    if release_blocking_ready and optional_ready:
+        status = "ready"
+    elif release_blocking_ready:
+        status = "release_blocking_ready"
+    else:
+        status = "action_required"
+    return {
+        "status": status,
+        "release_blocking_ready": release_blocking_ready,
+        "optional_ready": optional_ready,
+        "release_blocking_providers": release_blocking_providers,
+        "optional_providers": optional_providers,
+        "bootstrap_targets": bootstrap_targets,
+        "blocking_issues": blocking_issues,
+        "optional_issues": optional_issues,
+        "recommended_commands": list(STABLE_SETUP_COMMANDS),
+    }
+
+
+def _build_stable_setup_target(provider_name: str, sidecar: dict[str, Any] | None) -> dict[str, Any]:
+    spec = STABLE_SETUP_TARGETS[provider_name]
+    compatibility = (sidecar or {}).get("compatibility") or {}
+    return {
+        "provider_name": provider_name,
+        "env_var": (sidecar or {}).get("env_var"),
+        "required_for_release": bool(spec["required_for_release"]),
+        "packages": list(spec["packages"]),
+        "validated_python_versions": list(compatibility.get("validated_python_versions") or []),
+        "recommended_entrypoint": (sidecar or {}).get("recommended_entrypoint"),
+        "post_install_notes": list(spec["post_install_notes"]),
+    }
+
+
+def _describe_stable_setup_issue(sidecar: dict[str, Any] | None) -> dict[str, Any] | None:
+    if sidecar is None:
+        return None
+
+    compatibility = sidecar.get("compatibility") or {}
+    runtime_probe = sidecar.get("runtime_probe") or {}
+    configured_python = sidecar.get("configured_python")
+    if configured_python and sidecar.get("python_path_exists") is False:
+        issue_code = "missing_interpreter"
+        detail = f"{sidecar['env_var']} points to a missing interpreter: {configured_python}"
+    elif compatibility.get("status") == "unresolved":
+        issue_code = "python_unresolved"
+        detail = str(compatibility.get("note") or "Unable to read the configured interpreter version.")
+    elif compatibility.get("status") == "unvalidated":
+        issue_code = "python_unvalidated"
+        detail = str(compatibility.get("note") or "Configured interpreter is outside the validated set.")
+    elif not sidecar.get("runtime_available") and not configured_python:
+        issue_code = "not_configured"
+        detail = f"{sidecar['env_var']} is not configured and {sidecar['provider_name']} is unavailable in the current environment."
+    elif not sidecar.get("runtime_available"):
+        issue_code = "runtime_unavailable"
+        detail = str(runtime_probe.get("error") or sidecar.get("runtime_note") or "Runtime probe failed.")
+    else:
+        return None
+
+    return {
+        "provider_name": str(sidecar["provider_name"]),
+        "env_var": str(sidecar["env_var"]),
+        "issue_code": issue_code,
+        "detail": detail,
+    }
+
+
+def _build_stable_setup_recommendations(stable_setup: dict[str, Any]) -> list[str]:
+    if not stable_setup.get("release_blocking_ready"):
+        return [
+            "Bootstrap the release-blocking stable sidecars first with "
+            "`powershell -ExecutionPolicy Bypass -File .\\tools\\setup\\bootstrap-sidecars.ps1 -StableOnly -InstallPackages`.",
+            "Re-run the stable validation path with "
+            "`powershell -ExecutionPolicy Bypass -File .\\tools\\setup\\validate-sidecars.ps1 -StableOnly -RunDoctor`.",
+        ]
+    if not stable_setup.get("optional_ready"):
+        return [
+            "Release-blocking stable sidecars are ready. Finish the optional `lama` setup when you want the full stable model-backed restore path."
+        ]
+    return [
+        "Stable sidecars are ready for the public smoke path. Re-run "
+        "`powershell -ExecutionPolicy Bypass -File .\\tools\\benchmark\\run-release-smoke.ps1 -Limit 1` when preparing release evidence."
+    ]
+
+
 def _index_provider_descriptors(descriptors: dict[str, list[dict[str, Any]]]) -> dict[str, dict[str, Any]]:
     index: dict[str, dict[str, Any]] = {}
     for group_name in ("mask_providers", "restore_providers"):
@@ -289,6 +441,7 @@ def _build_compatibility_matrix(project_root: Path) -> dict[str, dict[str, Any]]
     for slot in SIDECAR_SLOTS:
         provider_name = str(slot["provider_name"])
         entry = SIDECAR_COMPATIBILITY.get(provider_name, {})
+        public_metadata = get_provider_public_metadata(provider_name)
         matrix[provider_name] = {
             "provider_name": provider_name,
             "env_var": str(slot["env_var"]),
@@ -298,6 +451,9 @@ def _build_compatibility_matrix(project_root: Path) -> dict[str, dict[str, Any]]
             "validated_packages": list(entry.get("validated_packages") or []),
             "status": str(entry.get("status") or "unspecified"),
             "notes": list(entry.get("notes") or []),
+            "support_tier": str(public_metadata["support_tier"]),
+            "validated_platforms": list(public_metadata["validated_platforms"]),
+            "recommended_entrypoint": public_metadata["recommended_entrypoint"],
         }
     return matrix
 
@@ -338,11 +494,17 @@ def _summarize_provider_descriptors(descriptors: dict[str, list[dict[str, Any]]]
     planned = [descriptor for descriptor in all_descriptors if not descriptor.get("implemented")]
     available = [descriptor for descriptor in implemented if descriptor.get("runtime_available")]
     unavailable = [descriptor for descriptor in implemented if not descriptor.get("runtime_available")]
+    stable = [descriptor for descriptor in implemented if _descriptor_support_tier(descriptor) == "stable"]
+    experimental = [descriptor for descriptor in implemented if _descriptor_support_tier(descriptor) == "experimental"]
     return {
         "implemented_total": len(implemented),
         "implemented_available": len(available),
         "implemented_unavailable": len(unavailable),
         "planned_total": len(planned),
+        "stable_total": len(stable),
+        "stable_available": len([descriptor for descriptor in stable if descriptor.get("runtime_available")]),
+        "experimental_total": len(experimental),
+        "experimental_available": len([descriptor for descriptor in experimental if descriptor.get("runtime_available")]),
     }
 
 
@@ -355,3 +517,15 @@ def _unique_preserve_order(values: list[str]) -> list[str]:
         seen.add(value)
         deduped.append(value)
     return deduped
+
+
+def _provider_field(descriptor: dict[str, Any] | None, provider_name: str, field_name: str) -> Any:
+    if descriptor and field_name in descriptor:
+        return descriptor[field_name]
+    public_metadata = get_provider_public_metadata(provider_name)
+    return public_metadata[field_name]
+
+
+def _descriptor_support_tier(descriptor: dict[str, Any]) -> str:
+    provider_name = str(descriptor.get("name") or "")
+    return str(_provider_field(descriptor, provider_name, "support_tier"))
