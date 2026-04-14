@@ -2,6 +2,7 @@
 
 ## 1. Freeze Scope
 
+- Start from [agent-handoff.md](./agent-handoff.md) when resuming the release effort after interruption or handoff
 - Decide the target version
 - Limit the release to reviewed changes
 - Move unfinished work out of the release milestone
