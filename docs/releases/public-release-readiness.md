@@ -19,12 +19,12 @@ Prepare the repository for a first broadly shareable public milestone, tentative
 - At least one documented model-backed restore flow
 - Windows setup guidance for sidecar environments
 - Example configuration patterns for common watermark layouts
+- A redistributable disposable benchmark corpus for automation-only regression evidence
 
 ## Open Gaps
 
 - Provider environment reproducibility is still Windows-first and not yet packaged end to end for every stable sidecar path
-- Stable baseline evidence capture is now automated, but the first release still needs an agreed disposable or redistributable benchmark corpus for public-facing evidence
-- Benchmark reporting still needs stronger quality metrics beyond the current repeated-run evidence bundle
+- Benchmark reporting still needs stronger quality metrics beyond the current repeated-run evidence bundles
 - Repository-side trusted publishing still needs to be enabled in GitHub and PyPI before the first live automated release
 
 ## Exit Definition

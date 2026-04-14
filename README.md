@@ -119,10 +119,12 @@ Run the benchmark workflow:
 powershell -ExecutionPolicy Bypass -File .\tools\benchmark\run-release-smoke.ps1 -Limit 1
 powershell -ExecutionPolicy Bypass -File .\tools\benchmark\run-release-smoke.ps1 -Limit 1 -RequireLama
 powershell -ExecutionPolicy Bypass -File .\tools\benchmark\capture-stable-baseline.ps1 -Repetitions 3
+python .\tools\benchmark\capture-disposable-evidence.py --clean
 ```
 
 `benchmark trends` reads the latest matching comparison and aggregation outputs, then writes a JSON and Markdown snapshot under `.\benchmarks\trends\`.
 `benchmark evidence` turns repeated stable runs into one release-oriented JSON and Markdown bundle under `.\benchmarks\evidence\`, with `latest.json` and `latest.md` kept up to date for release review.
+`capture-disposable-evidence.py` builds the repo-native redistributable synthetic corpus and a sidecar-free repeated evidence bundle under `.\runtime\disposable-evidence\benchmarks\evidence\`.
 Dataset and provider profiles can live in `no-watermar.toml`; see [docs/CONFIGURATION.md](./docs/CONFIGURATION.md) and [docs/examples/config/benchmark-local-profiles.toml](./docs/examples/config/benchmark-local-profiles.toml).
 Provider profiles can also carry `restore_prompt`, `restore_negative_prompt`, and structured `restore_options` for restore providers, including model-backed inpainting and direct corner cropping.
 The current no-watermark flow now supports two result choices: repair the detected watermark region in place, or use the local `corner_crop` restore provider to crop away the watermark-bearing corner directly.
@@ -250,6 +252,7 @@ This is the current repository path for FP8-style low-memory diffusion experimen
 - Use `--mask-provider`, `--restore-provider`, `--run-after`, and `--run-before` to narrow aggregation windows.
 - Use `benchmark.py evidence` to collapse repeated stable runs into one release-ready evidence summary with compare, aggregate, and trend links.
 - Use [tools/benchmark/README.md](./tools/benchmark/README.md) for the release smoke wrapper and the repeated stable evidence capture wrapper.
+- Use `python .\tools\benchmark\capture-disposable-evidence.py --clean` when you need the repo-native disposable evidence path that CI and local release preflight can reproduce without private inputs.
 - Use `python .\tools\benchmark\build-review-bundle.py --report ... --label ... --output ...` to assemble a side-by-side human review bundle from benchmark reports, masks, overlays, restored images, and comparison artifacts, especially when multiple reports share the same provider name.
 
 ## Scan And Batch Planning

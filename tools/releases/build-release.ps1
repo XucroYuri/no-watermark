@@ -2,6 +2,7 @@ param(
     [string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path,
     [switch]$SkipInstall,
     [switch]$SkipTests,
+    [switch]$SkipDisposableEvidence,
     [switch]$CleanDist
 )
 
@@ -40,6 +41,12 @@ try {
 
     if (-not $SkipTests) {
         Invoke-Step "Run tests" { python -m unittest discover -s tests -v }
+    }
+
+    if (-not $SkipDisposableEvidence) {
+        Invoke-Step "Capture disposable stable evidence" {
+            python .\tools\benchmark\capture-disposable-evidence.py --workspace-root .\runtime\release-preflight\disposable-evidence --clean
+        }
     }
 
     Invoke-Step "Build distribution artifacts" { python -m build }

@@ -12,6 +12,7 @@
 - Run `powershell -ExecutionPolicy Bypass -File .\tools\releases\build-release.ps1 -CleanDist` for the local packaging preflight
 - Confirm documentation and changelog updates are complete
 - Confirm no local-only artifacts are staged
+- Keep the disposable evidence bundle from `.\runtime\release-preflight\disposable-evidence\benchmarks\evidence\` as the sidecar-free regression proof for the release candidate
 - Save `.\benchmarks\evidence\latest.json` and `.\benchmarks\evidence\latest.md` from `capture-stable-baseline.ps1` as the release evidence bundle
 - Save any additional filtered aggregation summaries only when they materially change the release decision beyond the stable evidence bundle
 

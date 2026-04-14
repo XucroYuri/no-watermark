@@ -40,6 +40,7 @@ class ReleaseToolingTests(unittest.TestCase):
         self.assertIn("python -m twine check", content)
         self.assertIn("python -m unittest discover -s tests -v", content)
         self.assertIn("python -m no_watermar.cli --help", content)
+        self.assertIn("capture-disposable-evidence.py", content)
 
     def test_release_docs_reference_stable_baseline_capture(self) -> None:
         checklist = (REPO_ROOT / "docs" / "releases" / "release-checklist.md").read_text(encoding="utf-8")
@@ -48,6 +49,16 @@ class ReleaseToolingTests(unittest.TestCase):
         self.assertIn("capture-stable-baseline.ps1", checklist)
         self.assertIn("benchmark evidence", benchmark_helpers)
         self.assertIn("capture-stable-baseline.ps1", benchmark_helpers)
+        self.assertIn("capture-disposable-evidence.py", benchmark_helpers)
+
+    def test_ci_and_release_workflows_capture_disposable_evidence(self) -> None:
+        ci_workflow = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        release_workflow = (REPO_ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+
+        self.assertIn("capture-disposable-evidence.py", ci_workflow)
+        self.assertIn("upload-artifact", ci_workflow)
+        self.assertIn("capture-disposable-evidence.py", release_workflow)
+        self.assertIn("disposable-evidence", release_workflow)
 
     def test_gitignore_excludes_release_build_artifacts(self) -> None:
         content = (REPO_ROOT / ".gitignore").read_text(encoding="utf-8")

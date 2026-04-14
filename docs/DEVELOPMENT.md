@@ -58,10 +58,12 @@ Benchmark setup:
 .\bin\no-watermar.ps1 benchmark trends --dataset regular_corner_text --baseline-mask-provider seed_manifest --baseline-restore-provider telea --candidate-mask-provider paddleocr --candidate-restore-provider telea
 powershell -ExecutionPolicy Bypass -File .\tools\benchmark\run-release-smoke.ps1 -Limit 1
 powershell -ExecutionPolicy Bypass -File .\tools\benchmark\capture-stable-baseline.ps1 -Repetitions 3
+python .\tools\benchmark\capture-disposable-evidence.py --clean
 ```
 
 `benchmark trends` auto-resolves the latest matching compare and aggregate artifacts and writes a versioned JSON/Markdown snapshot plus `latest.json` / `latest.md` under `.\benchmarks\trends\`.
 `benchmark evidence` takes the repeated stable runs already stored under the benchmark root and writes a release-oriented JSON/Markdown summary plus `latest.json` / `latest.md` under `.\benchmarks\evidence\`.
+`capture-disposable-evidence.py` produces the repo-native synthetic corpus plus a sidecar-free repeated evidence bundle under `.\runtime\disposable-evidence\`.
 Dataset and provider profiles from `no-watermar.toml` can now drive the same scan, batch, and benchmark flows without repeating the same CLI argument sets.
 For private real-local slices, point `--benchmark-root` at a dedicated ignored subdirectory so compare, aggregate, and trend artifacts stay isolated per dataset.
 Provider profiles can now also carry `restore_prompt`, `restore_negative_prompt`, and `restore_options`, and those fields are persisted through batch plans, batch runs, and benchmark summaries.

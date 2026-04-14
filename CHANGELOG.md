@@ -13,6 +13,7 @@ The format is based on Keep a Changelog.
 - Added a `stable_setup` section to `providers doctor` so the public stable sidecar path now reports release-blocking readiness, optional stable gaps, and the next bootstrap or smoke commands
 - Added a local `tools\releases\build-release.ps1` helper plus a tag-driven GitHub Release and PyPI workflow for packaging automation
 - Added `benchmark evidence` and `tools\benchmark\capture-stable-baseline.ps1` so repeated stable benchmark runs now produce one release-ready evidence bundle with JSON and Markdown outputs
+- Added a repo-native disposable benchmark fixture plus `tools\benchmark\capture-disposable-evidence.py`, and wired that sidecar-free evidence path into CI, release preflight, and release build artifacts
 
 - Added persistent `paddleocr` sidecar session support for benchmark runs
 - Added benchmark report aggregation across repeated runs
@@ -70,6 +71,7 @@ The format is based on Keep a Changelog.
 - Changed the release smoke PowerShell wrapper to fail fast when the release-blocking stable OCR path is not ready
 - Changed CI to run package build and `twine check` validation before the release workflow can publish artifacts
 - Changed the release checklist and process docs to treat the stable evidence bundle as the default benchmark proof for release decisions
+- Changed the local release helper to capture disposable stable evidence automatically before packaging
 
 - Changed planned batch apply to consume the item list stored in the plan instead of rescanning the input root
 - Changed the root CLI module entrypoint to auto-load the repo-local `.env` file like the legacy wrappers

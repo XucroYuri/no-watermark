@@ -30,6 +30,14 @@ def _write_image(path: Path, shape: tuple[int, int, int]) -> None:
 
 
 class BenchmarkEvidenceTests(unittest.TestCase):
+    def test_capture_disposable_evidence_script_exists(self) -> None:
+        script_path = Path(__file__).resolve().parents[1] / "tools" / "benchmark" / "capture-disposable-evidence.py"
+        self.assertTrue(script_path.exists(), "disposable evidence helper should exist")
+        content = script_path.read_text(encoding="utf-8")
+
+        self.assertIn("create_disposable_benchmark_fixture", content)
+        self.assertIn("build_stable_baseline_evidence", content)
+
     def test_capture_stable_baseline_script_exists(self) -> None:
         script_path = Path(__file__).resolve().parents[1] / "tools" / "benchmark" / "capture-stable-baseline.ps1"
         self.assertTrue(script_path.exists(), "stable baseline capture helper should exist")
@@ -195,6 +203,34 @@ class BenchmarkEvidenceTests(unittest.TestCase):
             summary = json.loads(latest_json.read_text(encoding="utf-8"))
             self.assertEqual(summary["status"], "ready")
             self.assertEqual(summary["release_blocking"]["candidate"]["restore_provider"], "noop")
+
+    def test_capture_disposable_evidence_script_runs_end_to_end(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            workspace_root = Path(tmp_dir) / "workspace"
+            script_path = Path(__file__).resolve().parents[1] / "tools" / "benchmark" / "capture-disposable-evidence.py"
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(script_path),
+                    "--workspace-root",
+                    str(workspace_root),
+                    "--repetitions",
+                    "2",
+                    "--minimum-run-count",
+                    "2",
+                    "--clean",
+                ],
+                cwd=str(Path(__file__).resolve().parents[1]),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(completed.returncode, 0, msg=completed.stderr or completed.stdout)
+            payload = json.loads(completed.stdout)
+            self.assertEqual(payload["evidence"]["status"], "ready")
+            self.assertEqual(payload["fixture"]["image_count"], 3)
+            self.assertTrue((workspace_root / "benchmarks" / "evidence" / "latest.json").exists())
 
 
 if __name__ == "__main__":

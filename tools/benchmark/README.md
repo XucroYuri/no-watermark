@@ -6,6 +6,7 @@ This directory contains local benchmark workflow helpers that sit above the Pyth
 
 - `run-release-smoke.ps1`: execute a release-oriented smoke pass for the baseline, the release-blocking OCR-backed path, and optionally the stable `lama` restore path
 - `capture-stable-baseline.ps1`: repeat the release smoke flow and build one JSON/Markdown evidence bundle for the stable provider matrix
+- `capture-disposable-evidence.py`: generate a repo-native synthetic corpus and capture a repeated stable evidence bundle without private inputs or sidecars
 - `build-review-bundle.py`: assemble a local side-by-side review bundle from benchmark reports, copied artifacts, and provider outputs
 
 ## Example
@@ -16,6 +17,10 @@ powershell -ExecutionPolicy Bypass -File .\tools\benchmark\run-release-smoke.ps1
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\benchmark\capture-stable-baseline.ps1 -Repetitions 3
+```
+
+```bash
+python .\tools\benchmark\capture-disposable-evidence.py --clean
 ```
 
 ```powershell
@@ -75,6 +80,21 @@ Useful flags for `capture-stable-baseline.ps1`:
 - `-OptionalMaskProvider seed_manifest -OptionalRestoreProvider corner_crop`
 
 Use the provider override flags when you want to regenerate evidence from an existing benchmark root or exercise the wrapper against synthetic/local regression fixtures without requiring the default OCR-backed stable path.
+
+For automation-only evidence that must stay redistributable and sidecar-free, use:
+
+```bash
+python .\tools\benchmark\capture-disposable-evidence.py --clean
+```
+
+That helper:
+
+- writes a repo-native synthetic corpus under `.\runtime\disposable-evidence\inputs\`
+- prepares both `regular_corner_text` and `cover_heavy` dataset manifests
+- repeats lightweight `seed_manifest + telea`, `seed_manifest + noop`, and `seed_manifest + corner_crop` benchmark runs
+- writes a ready-state evidence bundle under `.\runtime\disposable-evidence\benchmarks\evidence\`
+
+Use this disposable path for CI and packaging preflight. Use `capture-stable-baseline.ps1` when you need the real stable provider matrix with `paddleocr` and optional `lama`.
 
 `build-review-bundle.py` writes:
 

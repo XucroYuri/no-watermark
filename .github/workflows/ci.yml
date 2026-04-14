@@ -28,8 +28,33 @@ jobs:
         run: |
           python -m unittest discover -s tests -v
 
-  package:
+  disposable_evidence:
     needs: test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "windows-latest"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+      - name: Capture disposable stable evidence
+        run: |
+          python ./tools/benchmark/capture-disposable-evidence.py --workspace-root ./runtime/ci-disposable-evidence --clean
+      - name: Upload disposable evidence bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: disposable-evidence-${{ matrix.os }}
+          path: runtime/ci-disposable-evidence/benchmarks/evidence/*
+
+  package:
+    needs: [test, disposable_evidence]
     runs-on: ubuntu-latest
 
     steps:

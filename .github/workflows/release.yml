@@ -28,6 +28,9 @@ jobs:
       - name: Run tests
         run: |
           python -m unittest discover -s tests -v
+      - name: Capture disposable stable evidence
+        run: |
+          python ./tools/benchmark/capture-disposable-evidence.py --workspace-root ./runtime/release-disposable-evidence --clean
       - name: Build distribution artifacts
         run: |
           python -m build
@@ -39,6 +42,11 @@ jobs:
         with:
           name: python-dist
           path: dist/*
+      - name: Upload disposable evidence bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: disposable-evidence
+          path: runtime/release-disposable-evidence/benchmarks/evidence/*
 
   github_release:
     if: startsWith(github.ref, 'refs/tags/v')

@@ -106,6 +106,7 @@
 - Tightened the release smoke wrapper so it now stops early when the release-blocking stable OCR path is not ready
 - Added release build automation with a local packaging helper, CI package checks, and a tag-driven GitHub Release plus PyPI workflow
 - Added `benchmark evidence` plus `capture-stable-baseline.ps1` so repeated stable benchmark runs now collapse into one release-oriented JSON and Markdown evidence bundle
+- Added a repo-native disposable benchmark fixture plus `capture-disposable-evidence.py`, and wired that sidecar-free evidence path into CI, release preflight, and release build artifacts
 
 ## In Progress
 
@@ -115,14 +116,13 @@
 - Hardening the Windows-first public CLI support matrix while keeping heavy model providers experimental
 - Finishing the reproducible public `lama` recipe on top of the new stable bootstrap path
 - Preparing the repository-side trusted publishing configuration needed for the first live automated release
-- Preparing the first disposable or redistributable repeated-run benchmark corpus for public release evidence
 - Reviewing the current 2-image `brushnet` tuning shortlist through the new local review bundle against `ocr_telea` and the original `ocr_brushnet` baseline
 - Deciding whether any tuned `brushnet` variant is subjectively strong enough to justify a wider slice despite the current metric regressions
 
 ## Next Milestones
 
 - Ship the first reproducible OCR-backed benchmark run with persistent sidecar reuse on real local samples
-- Capture the first release-blocking stable evidence bundle on a disposable or redistributable benchmark slice
+- Capture the first release-blocking stable evidence bundle on the stable `paddleocr + telea` path and archive it beside the disposable automation bundle
 - Turn the current optional stable `lama` path into a one-command reproducible recipe with compatibility notes
 - Turn the new diffusion-backed 10-image snapshot into a human-reviewed provider decision
 - Turn the new persistent `ocr_powerpaint_v21` 2-image snapshot into a human-reviewed provider decision before scaling it to a larger slice

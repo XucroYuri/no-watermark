@@ -7,7 +7,7 @@
 - Keep the stable provider matrix release-blocking and the experimental matrix opt-in
 - Finish the last mile of the stable sidecar path so `bootstrap-sidecars.ps1 -StableOnly -InstallPackages` and `validate-sidecars.ps1 -StableOnly -RunDoctor` are enough for a new machine
 - Expand CI and release smoke coverage for the stable CLI path on Windows and Linux
-- Capture the first release-blocking repeated-run stable evidence bundle on a disposable or redistributable benchmark slice
+- Capture the first release-blocking repeated-run stable evidence bundle on the real `paddleocr + telea` path and archive it alongside the disposable automation bundle
 - Enable GitHub/PyPI trusted publishing so the new tag-driven release workflow can go live
 
 ## Next
