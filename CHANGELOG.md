@@ -6,6 +6,8 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-14
+
 ### Added
 
 - Added provider public-support metadata so CLI descriptors and `providers doctor` now report `support_tier`, validated platforms, and a recommended entrypoint

@@ -2,7 +2,7 @@
 
 ## Target
 
-Prepare the repository for a first broadly shareable public milestone, tentatively `0.3.0`.
+Align the repository for its first broadly shareable public milestone, `0.3.0`.
 
 ## Required Conditions
 
@@ -25,6 +25,7 @@ Prepare the repository for a first broadly shareable public milestone, tentative
 
 - Stable sidecar reproducibility is now validated on the Windows-first public fixture path, but Linux parity and broader cross-machine packaging still lag that path
 - Benchmark reporting still needs stronger quality metrics beyond the current repeated-run evidence bundles
+- The `no-watermar` PyPI project and pending trusted publisher still need to be created before the first live automated release
 - Repository-side trusted publishing still needs to be enabled in GitHub and PyPI before the first live automated release
 
 ## Exit Definition

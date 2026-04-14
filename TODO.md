@@ -2,12 +2,12 @@
 
 ## Now
 
-- Prepare a `0.3.0` public release readiness pass
+- Cut the first `0.3.0` public release from the merged public-CLI baseline
 - Finish Windows-first packaging for `pip install no-watermar`
 - Keep the stable provider matrix release-blocking and the experimental matrix opt-in
 - Expand CI and release smoke coverage for the stable CLI path on Windows and Linux
 - Capture the first release-blocking repeated-run stable evidence bundle on the real `paddleocr + telea` path and archive it alongside the disposable automation bundle
-- Enable GitHub/PyPI trusted publishing so the new tag-driven release workflow can go live
+- Create the `no-watermar` PyPI project and enable GitHub/PyPI trusted publishing so the tag-driven release workflow can go live
 
 ## Next
 
