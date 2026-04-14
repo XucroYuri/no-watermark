@@ -109,6 +109,8 @@
 - Added a repo-native disposable benchmark fixture plus `capture-disposable-evidence.py`, and wired that sidecar-free evidence path into CI, release preflight, and release build artifacts
 - Added a `stable-public` config template, and changed the stable sidecar bootstrap path to initialize that local config automatically when `no-watermar.toml` does not exist yet
 - Added evidence zip packaging plus GitHub Release asset wiring so disposable benchmark evidence is no longer just a raw workflow directory artifact
+- Fixed the stable bootstrap path so repo config initialization no longer depends on the sidecar interpreter override, and external bootstrap failures now stop the script immediately
+- Changed benchmark runs to reject empty prepared datasets before they start provider sidecars, which turns release smoke on empty inputs into a fast configuration error instead of a long hang
 
 ## In Progress
 

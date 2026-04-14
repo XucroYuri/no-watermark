@@ -53,6 +53,12 @@ If `lama` needs a different interpreter than the default shell Python, override 
 powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -StableOnly -InstallPackages -LamaPythonCommand "C:\Path\To\Python312\python.exe"
 ```
 
+If the sidecars should use a different interpreter without changing the repository CLI bootstrap path, keep config initialization on the repo Python and override only the sidecar slots:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -StableOnly -InstallPackages -ConfigPythonCommand "C:\Path\To\Repo\python.exe" -LamaPythonCommand "C:\Path\To\Python312\python.exe"
+```
+
 If the diffusion restore sidecar should use a separate interpreter, override that slot explicitly:
 
 ```powershell
@@ -107,3 +113,4 @@ For `powerpaint_v2_1`, the current validated local smoke path uses Python `3.12`
 - If a model wrapper fails under the default Python version, recreate only that sidecar venv with a compatible interpreter rather than changing the whole repository environment.
 - If a sidecar interpreter exists but a provider is still unavailable, use `providers doctor` first and `probe-providers` when you need the raw import probe output.
 - The public release smoke path now fails fast when the release-blocking `paddleocr` setup is not ready. Add `-RequireLama` to `run-release-smoke.ps1` when the optional stable model-backed restore path must also pass.
+- `benchmark.py run` and `run-release-smoke.ps1` now fail fast when the selected dataset contains no benchmark items, so populate `.\inputs` or point the workflow at a disposable/local test set before running release evidence commands.

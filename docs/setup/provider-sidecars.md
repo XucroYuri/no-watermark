@@ -69,11 +69,14 @@ That validation path surfaces:
 When one provider needs a different base interpreter, override it explicitly during bootstrap:
 
 ```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -StableOnly -InstallPackages -ConfigPythonCommand "C:\Path\To\Repo\python.exe"
 powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -StableOnly -InstallPackages -LamaPythonCommand "C:\Path\To\Python312\python.exe"
 powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -DiffusersPythonCommand "C:\Path\To\Python311\python.exe"
 powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -PowerPaintPythonCommand "C:\Path\To\Python312\python.exe"
 powershell -ExecutionPolicy Bypass -File .\tools\setup\bootstrap-sidecars.ps1 -BrushNetPythonCommand "C:\Path\To\Python39\python.exe"
 ```
+
+`-ConfigPythonCommand` is only for repository-local CLI actions such as `config init`. Use the per-provider overrides when the sidecar virtual environments should be created from a different interpreter than the repo bootstrap environment.
 
 ## Environment Variables
 
@@ -213,3 +216,4 @@ powershell -ExecutionPolicy Bypass -File .\tools\benchmark\run-release-smoke.ps1
 ```
 
 The smoke script now fails fast when the release-blocking stable `paddleocr` setup is not ready, and it still checks `lama` availability from `probe-providers`. If the interpreter exists but the `simple_lama` module is missing, the script skips the model-backed restore smoke run unless `-RequireLama` is set.
+It also fails fast when the selected dataset has no benchmark items, instead of starting provider sidecars against an empty manifest.

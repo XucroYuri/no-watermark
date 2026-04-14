@@ -47,6 +47,14 @@ class BenchmarkEvidenceTests(unittest.TestCase):
         self.assertIn("benchmark\", \"evidence", content)
         self.assertIn("--candidate-mask-provider", content)
 
+    def test_capture_stable_baseline_script_invokes_smoke_with_named_parameters(self) -> None:
+        script_path = Path(__file__).resolve().parents[1] / "tools" / "benchmark" / "capture-stable-baseline.ps1"
+        content = script_path.read_text(encoding="utf-8")
+
+        self.assertNotIn("& $smokeScript @smokeArgs", content)
+        self.assertIn("-BenchmarkRoot $BenchmarkRoot", content)
+        self.assertIn("-Limit $Limit", content)
+
     def test_build_stable_baseline_evidence_writes_ready_summary(self) -> None:
         with tempfile.TemporaryDirectory() as input_dir, tempfile.TemporaryDirectory() as bench_dir:
             input_root = Path(input_dir)

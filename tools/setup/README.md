@@ -10,7 +10,12 @@ This directory contains local setup helpers for development and provider environ
 
 These scripts are conservative by design. They create predictable directory structure and validation output without forcing one provider package matrix on every machine.
 
-`bootstrap-sidecars.ps1` uses the current `python` command by default. If a specific interpreter is required, pass `-PythonCommand` explicitly.
+`bootstrap-sidecars.ps1` separates the repository CLI interpreter from the sidecar interpreters:
+
+- `-ConfigPythonCommand` controls the Python used for `no_watermar.cli config init`
+- `-PythonCommand` controls the default Python used to create sidecar virtual environments
+
+If the repo bootstrap should stay on the current editable-install environment but one sidecar needs a different interpreter, keep `-ConfigPythonCommand` unchanged and override only the relevant sidecar slot.
 
 For the public stable setup path, prefer:
 

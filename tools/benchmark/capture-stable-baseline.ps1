@@ -28,22 +28,21 @@ $requiredRunCount = if ($MinimumRunCount -gt 0) { $MinimumRunCount } else { $Rep
 
 if (-not $SkipSmoke) {
     for ($index = 0; $index -lt $Repetitions; $index++) {
-        $smokeArgs = @(
-            "-InputRoot", $InputRoot,
-            "-BenchmarkRoot", $BenchmarkRoot,
-            "-Dataset", $Dataset,
-            "-Limit", "$Limit",
-            "-OcrSessionMode", $OcrSessionMode
-        )
-        if ($SkipPrepare -or $index -gt 0) {
-            $smokeArgs += "-SkipPrepare"
-        }
-        if ($RequireLama) {
-            $smokeArgs += "-RequireLama"
-        }
-
         Write-Host "Stable smoke iteration $($index + 1) / $Repetitions"
-        & $smokeScript @smokeArgs
+        if ($SkipPrepare -or $index -gt 0) {
+            if ($RequireLama) {
+                & $smokeScript -InputRoot $InputRoot -BenchmarkRoot $BenchmarkRoot -Dataset $Dataset -Limit $Limit -OcrSessionMode $OcrSessionMode -SkipPrepare -RequireLama
+            }
+            else {
+                & $smokeScript -InputRoot $InputRoot -BenchmarkRoot $BenchmarkRoot -Dataset $Dataset -Limit $Limit -OcrSessionMode $OcrSessionMode -SkipPrepare
+            }
+        }
+        elseif ($RequireLama) {
+            & $smokeScript -InputRoot $InputRoot -BenchmarkRoot $BenchmarkRoot -Dataset $Dataset -Limit $Limit -OcrSessionMode $OcrSessionMode -RequireLama
+        }
+        else {
+            & $smokeScript -InputRoot $InputRoot -BenchmarkRoot $BenchmarkRoot -Dataset $Dataset -Limit $Limit -OcrSessionMode $OcrSessionMode
+        }
         if ($LASTEXITCODE -ne 0) {
             throw "run-release-smoke.ps1 failed during iteration $($index + 1)."
         }

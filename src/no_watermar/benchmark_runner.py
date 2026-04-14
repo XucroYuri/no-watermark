@@ -44,6 +44,18 @@ def run_benchmark(
     mask_provider = create_mask_provider(mask_provider_name)
     restore_provider = create_restore_provider(restore_provider_name)
     dataset_ids = _resolve_dataset_ids(dataset_id)
+    dataset_items_by_id: dict[str, list[Any]] = {}
+    for current_dataset_id in dataset_ids:
+        dataset_items = load_dataset_items(benchmark_root, current_dataset_id)
+        if limit is not None:
+            dataset_items = dataset_items[:limit]
+        if not dataset_items:
+            raise ValueError(
+                f"Dataset '{current_dataset_id}' contains no benchmark items. "
+                "Run prepare with a populated input root or adjust the requested dataset/limit."
+            )
+        dataset_items_by_id[current_dataset_id] = dataset_items
+
     ocr_context = create_paddleocr_execution_context(ocr_session_mode)
     restore_execution_context = _build_restore_execution_context(
         restore_provider_name=restore_provider_name,
@@ -55,9 +67,7 @@ def run_benchmark(
 
     try:
         for current_dataset_id in dataset_ids:
-            dataset_items = load_dataset_items(benchmark_root, current_dataset_id)
-            if limit is not None:
-                dataset_items = dataset_items[:limit]
+            dataset_items = dataset_items_by_id[current_dataset_id]
 
             dataset_root = ensure_dir(run_root / current_dataset_id / f"{mask_provider_name}__{restore_provider_name}")
             masks_root = ensure_dir(dataset_root / "masks")

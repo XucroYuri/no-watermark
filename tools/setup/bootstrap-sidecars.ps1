@@ -1,6 +1,7 @@
 param(
     [string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path,
     [string]$PythonCommand = "python",
+    [string]$ConfigPythonCommand = "python",
     [string]$PaddlePythonCommand = "",
     [string]$LamaPythonCommand = "",
     [string]$DiffusersPythonCommand = "",
@@ -27,7 +28,14 @@ function Invoke-Step {
     }
 
     Write-Output "RUN  $Label"
+    $global:LASTEXITCODE = 0
     & $Action
+    if (-not $?) {
+        throw "Step failed: $Label"
+    }
+    if ($global:LASTEXITCODE -ne 0) {
+        throw "Step failed with exit code $global:LASTEXITCODE: $Label"
+    }
 }
 
 $projectRootPath = (Resolve-Path $ProjectRoot).Path
@@ -99,7 +107,7 @@ if ($StableOnly -and -not $SkipConfigInit) {
     }
     else {
         Invoke-Step "Initialize stable-public config at $configPath" {
-            & $PythonCommand -m no_watermar.cli config init --template stable-public --config $configPath
+            & $ConfigPythonCommand -m no_watermar.cli config init --template stable-public --config $configPath
         }
     }
 }
@@ -173,6 +181,7 @@ else {
     Write-Output "NEXT   Install the BrushNet upstream repo in editable mode inside .\\.venvs\\brushnet, or set NO_WATERMAR_BRUSHNET_SOURCE_DIR to a local clone"
 }
 Write-Output "NEXT Override one provider interpreter when needed:"
+Write-Output "NEXT   powershell -ExecutionPolicy Bypass -File .\\tools\\setup\\bootstrap-sidecars.ps1 -ConfigPythonCommand `"C:\\Path\\To\\Repo\\python.exe`""
 Write-Output "NEXT   powershell -ExecutionPolicy Bypass -File .\\tools\\setup\\bootstrap-sidecars.ps1 -LamaPythonCommand `"C:\\Path\\To\\Python312\\python.exe`""
 Write-Output "NEXT   powershell -ExecutionPolicy Bypass -File .\\tools\\setup\\bootstrap-sidecars.ps1 -DiffusersPythonCommand `"C:\\Path\\To\\Python311\\python.exe`""
 Write-Output "NEXT   powershell -ExecutionPolicy Bypass -File .\\tools\\setup\\bootstrap-sidecars.ps1 -PowerPaintPythonCommand `"C:\\Path\\To\\Python312\\python.exe`""

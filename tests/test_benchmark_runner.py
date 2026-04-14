@@ -99,6 +99,24 @@ def _make_fake_powerpaint_context() -> tuple[PowerPaintExecutionContext, FakePow
 
 
 class BenchmarkRunnerTests(unittest.TestCase):
+    def test_run_benchmark_rejects_empty_dataset_before_starting_ocr_context(self) -> None:
+        with tempfile.TemporaryDirectory() as input_dir, tempfile.TemporaryDirectory() as bench_dir:
+            input_root = Path(input_dir)
+            benchmark_root = Path(bench_dir)
+            prepare_benchmark_dataset(input_root, benchmark_root, recursive=False)
+
+            with patch(
+                "no_watermar.benchmark_runner.create_paddleocr_execution_context",
+                side_effect=AssertionError("ocr context should not be created for an empty dataset"),
+            ):
+                with self.assertRaisesRegex(ValueError, "contains no benchmark items"):
+                    run_benchmark(
+                        benchmark_root,
+                        dataset_id=DATASET_REGULAR,
+                        mask_provider_name="seed_manifest",
+                        restore_provider_name="telea",
+                    )
+
     def test_run_benchmark_records_latency_and_session_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as input_dir, tempfile.TemporaryDirectory() as bench_dir:
             input_root = Path(input_dir)

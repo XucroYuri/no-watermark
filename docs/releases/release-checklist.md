@@ -18,6 +18,7 @@
 - Run `python .\benchmark.py list-providers`
 - Run `python .\benchmark.py probe-providers`
 - Run `powershell -ExecutionPolicy Bypass -File .\tools\setup\validate-sidecars.ps1 -StableOnly -RunDoctor`
+- Confirm `.\inputs` or the selected local disposable test set contains at least one benchmark image before smoke/evidence commands
 - Run at least one baseline smoke command against `.\inputs` or a local disposable test set
 - Run `powershell -ExecutionPolicy Bypass -File .\tools\benchmark\run-release-smoke.ps1 -Limit 1`
 - Run `powershell -ExecutionPolicy Bypass -File .\tools\benchmark\capture-stable-baseline.ps1 -Repetitions 3`

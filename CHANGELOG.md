@@ -16,6 +16,8 @@ The format is based on Keep a Changelog.
 - Added a repo-native disposable benchmark fixture plus `tools\benchmark\capture-disposable-evidence.py`, and wired that sidecar-free evidence path into CI, release preflight, and release build artifacts
 - Added a `stable-public` config template and automatic stable-config initialization during `bootstrap-sidecars.ps1 -StableOnly`
 - Added `tools\releases\package-evidence.py` so disposable evidence can be archived as a release-ready zip bundle and attached to GitHub Releases
+- Added bootstrap regression coverage so stable sidecar setup now keeps repository config initialization on the repo CLI interpreter and fails fast when external bootstrap commands return non-zero exit codes
+- Added benchmark regression coverage so empty datasets now fail before OCR sidecars start
 
 - Added persistent `paddleocr` sidecar session support for benchmark runs
 - Added benchmark report aggregation across repeated runs
@@ -74,6 +76,7 @@ The format is based on Keep a Changelog.
 - Changed CI to run package build and `twine check` validation before the release workflow can publish artifacts
 - Changed the release checklist and process docs to treat the stable evidence bundle as the default benchmark proof for release decisions
 - Changed the local release helper to capture disposable stable evidence automatically before packaging
+- Changed `run_benchmark` to reject empty prepared datasets before any provider sidecars are created
 
 - Changed planned batch apply to consume the item list stored in the plan instead of rescanning the input root
 - Changed the root CLI module entrypoint to auto-load the repo-local `.env` file like the legacy wrappers

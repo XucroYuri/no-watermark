@@ -48,6 +48,8 @@ The script will:
 - compare baseline and OCR-backed reports
 - aggregate matching OCR-backed runs
 
+The smoke path now fails fast when the selected dataset has no benchmark items, so populate `.\inputs` first or point the helper at a disposable/local test set.
+
 After compare and aggregate outputs exist, capture a merged snapshot with:
 
 ```powershell
