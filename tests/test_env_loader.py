@@ -11,10 +11,24 @@ SRC_DIR = Path(__file__).resolve().parents[1] / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from no_watermar.env_loader import load_local_env, read_local_env_file
+from no_watermar.env_loader import load_local_env, read_local_env_file, resolve_env_path_value
 
 
 class EnvLoaderTests(unittest.TestCase):
+    def test_resolve_env_path_value_normalizes_windows_relative_separators(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+
+            resolved = resolve_env_path_value(
+                ".\\.venvs\\lama\\Scripts\\python.exe",
+                root,
+            )
+
+            self.assertEqual(
+                resolved,
+                str((root / ".venvs" / "lama" / "Scripts" / "python.exe").resolve()),
+            )
+
     def test_read_local_env_file_resolves_relative_python_paths(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir)
