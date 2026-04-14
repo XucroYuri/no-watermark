@@ -35,6 +35,12 @@ def _write_image(path: Path, shape: tuple[int, int, int]) -> None:
     encoded.tofile(str(path))
 
 
+def _assert_same_path(test_case: unittest.TestCase, actual: str | None, expected: Path | str | None) -> None:
+    test_case.assertIsNotNone(actual)
+    test_case.assertIsNotNone(expected)
+    test_case.assertEqual(Path(actual).resolve(), Path(expected).resolve())
+
+
 class CliTests(unittest.TestCase):
     def test_batch_apply_dispatches_to_pipeline(self) -> None:
         buffer = io.StringIO()
@@ -349,7 +355,7 @@ class CliTests(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             self.assertEqual(payload["command"], "config show")
             self.assertEqual(payload["status"], "ok")
-            self.assertEqual(payload["config"]["path"], str(config_path))
+            _assert_same_path(self, payload["config"]["path"], config_path)
             self.assertEqual(payload["watermark_keywords"]["active_presets"], ["brand"])
 
     def test_config_validate_reports_defaults_when_no_config_file_exists(self) -> None:
@@ -378,7 +384,7 @@ class CliTests(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             self.assertEqual(payload["status"], "ok")
             self.assertEqual(payload["template"], "brand-social")
-            self.assertEqual(payload["config_path"], str(target_path))
+            _assert_same_path(self, payload["config_path"], target_path)
             self.assertTrue(target_path.exists())
             self.assertIn('brand_social = [', target_path.read_text(encoding="utf-8"))
 

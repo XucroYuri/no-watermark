@@ -24,6 +24,12 @@ from no_watermar.config import (
 )
 
 
+def _assert_same_path(test_case: unittest.TestCase, actual: Path | str | None, expected: Path | str | None) -> None:
+    test_case.assertIsNotNone(actual)
+    test_case.assertIsNotNone(expected)
+    test_case.assertEqual(Path(actual).resolve(), Path(expected).resolve())
+
+
 class ConfigTests(unittest.TestCase):
     def test_discover_config_path_searches_parent_directories(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -34,7 +40,7 @@ class ConfigTests(unittest.TestCase):
             nested.mkdir(parents=True)
 
             with patch.dict(os.environ, {}, clear=True):
-                self.assertEqual(discover_config_path(start_dir=nested), config_path)
+                _assert_same_path(self, discover_config_path(start_dir=nested), config_path)
 
     def test_get_watermark_keyword_settings_merges_presets_and_env_keywords(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -65,7 +71,7 @@ class ConfigTests(unittest.TestCase):
             ):
                 settings = get_watermark_keyword_settings()
 
-            self.assertEqual(settings.config_path, config_path)
+            _assert_same_path(self, settings.config_path, config_path)
             self.assertEqual(settings.active_presets, ("brand", "stock"))
             self.assertIn("acmestudio", settings.tokens)
             self.assertIn("@acme", settings.tokens)
@@ -144,7 +150,7 @@ class ConfigTests(unittest.TestCase):
 
             config_path = root / "no-watermar.toml"
             self.assertEqual(summary["status"], "ok")
-            self.assertEqual(summary["config_path"], str(config_path))
+            _assert_same_path(self, summary["config_path"], config_path)
             self.assertEqual(summary["template"], "brand-social")
             self.assertFalse(summary["overwritten"])
             self.assertTrue(config_path.exists())
