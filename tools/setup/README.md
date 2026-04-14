@@ -5,7 +5,7 @@ This directory contains local setup helpers for development and provider environ
 ## Scripts
 
 - `bootstrap-sidecars.ps1`: create the default provider virtual environments under `./.venvs`
-- `validate-sidecars.ps1`: inspect expected sidecar interpreter paths and print environment export commands
+- `validate-sidecars.ps1`: inspect expected sidecar interpreter paths, print environment export commands, and feed discovered default `.venvs` interpreters into `-RunProbe` / `-RunDoctor`
 - `..\benchmark\run-release-smoke.ps1`: run a release-oriented benchmark smoke pass once provider environments are configured
 
 These scripts are conservative by design. They create predictable directory structure and validation output without forcing one provider package matrix on every machine.
@@ -36,5 +36,6 @@ When only one provider needs a different interpreter, use the per-slot overrides
 - `-PowerPaintPythonCommand`
 
 `validate-sidecars.ps1 -RunProbe` will also invoke `python .\benchmark.py probe-providers` so you can confirm that each configured interpreter can import its expected provider module.
+When the process environment does not already export the stable sidecar paths, `validate-sidecars.ps1` now injects any existing default `.venvs\...\Scripts\python.exe` paths into the probe/doctor subprocesses automatically.
 
 For the richer root-CLI diagnosis view, run `.\bin\no-watermar.ps1 providers doctor` after the sidecar paths are configured. The doctor output now includes the configured interpreter version, the documented compatibility status for each sidecar slot, and a `stable_setup` summary for the public stable bootstrap path.
