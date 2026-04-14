@@ -10,6 +10,17 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 class PackagingMetadataTests(unittest.TestCase):
+    def test_public_version_is_consistent_across_metadata_and_docs(self) -> None:
+        payload = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+        project_version = payload["project"]["version"]
+        init_module = (PROJECT_ROOT / "src" / "no_watermar" / "__init__.py").read_text(encoding="utf-8")
+        readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+        changelog = (PROJECT_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+
+        self.assertIn(f'__version__ = "{project_version}"', init_module)
+        self.assertIn(f"- Current maturity: `{project_version}`", readme)
+        self.assertIn(f"## [{project_version}] - ", changelog)
+
     def test_pyproject_declares_public_console_entrypoints_and_extras(self) -> None:
         payload = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
         project = payload["project"]

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "no-watermar"
-version = "0.2.0"
+version = "0.3.0"
 description = "Professional local-first CLI for batch watermark removal benchmarking."
 readme = "README.md"
 requires-python = ">=3.11"

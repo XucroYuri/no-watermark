@@ -6,8 +6,8 @@ The repository is organized as a reusable framework, not as a single-case sample
 
 ## Status
 
-- Current maturity: `0.2.0`
-- Focus: professional CLI hardening, benchmark scaffolding, provider integration
+- Current maturity: `0.3.0`
+- Focus: public CLI delivery, stable evidence automation, release automation
 - Default stack: Python, OpenCV, optional OCR / inpainting sidecars
 
 ## What It Does
