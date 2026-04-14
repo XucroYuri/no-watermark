@@ -18,17 +18,22 @@ This document is the fast-resume entrypoint for the next agent session. It recor
   - PR `#2`: `0.3.0` release metadata preparation
   - PR `#3`: upgrade `actions/checkout` and `actions/setup-python` to Node 24-compatible majors
   - PR `#4`: upgrade `actions/upload-artifact` / `actions/download-artifact` to current majors
+- GitHub release-side setup has advanced:
+  - repository environment `pypi` now exists
+  - manual `Release` workflow dry run on `main` succeeded on `2026-04-14`
+  - dry-run reference: GitHub Actions run `24390507894`
 
 ## What Is Still Blocking The First Live Release
 
-These are external-release blockers, not repository code gaps:
+These are still the live-release blockers:
 
 1. PyPI project setup is still incomplete.
    - During validation on `2026-04-14`, both `https://pypi.org/project/no-watermar/` and `https://pypi.org/project/no-watermark/` returned `404`.
    - Re-check ownership and naming before tagging the first public release.
 2. PyPI trusted publishing still needs to be enabled.
    - The release workflow already uses OIDC-based publishing.
-   - The PyPI-side trusted publisher and any required GitHub environment approvals still need to be configured.
+   - The GitHub-side `pypi` environment already exists.
+   - The remaining work is on the PyPI side: create the trusted publisher entry for this repository/workflow.
 3. A fresh real stable evidence bundle still needs to be captured on a machine with the stable sidecars actually installed.
    - Disposable evidence is automated and green in CI.
    - Real release evidence still needs a configured `paddleocr + telea` machine, plus optional `lama`.
@@ -43,7 +48,7 @@ Execute these steps in order:
 2. Configure live publishing.
    - Create the PyPI project if it does not exist yet.
    - Add the GitHub repository/workflow as a trusted publisher in PyPI.
-   - Confirm the GitHub `pypi` environment is usable for the release workflow.
+   - GitHub-side environment setup is already done; do not repeat it unless the repository is recreated.
 3. Run local release preflight from a clean worktree on `main`.
    - Run the release helper and confirm disposable evidence + packaging still pass.
 4. Run the stable public matrix on a prepared machine.
@@ -54,6 +59,13 @@ Execute these steps in order:
    - Create annotated tag `v0.3.0`.
    - Push the tag.
    - Confirm `.github/workflows/release.yml` creates the GitHub Release and publishes to PyPI.
+
+## Already Verified Outside The Repo
+
+- `Release` workflow `workflow_dispatch` on `main` succeeded without publishing:
+  - run id: `24390507894`
+  - successful steps included tests, disposable evidence capture, evidence packaging, build, and `twine check`
+- Repository environment `pypi` exists in GitHub and is ready for the release workflow to reference
 
 ## Commands To Resume Quickly
 
