@@ -35,6 +35,7 @@
 - `workflow_dispatch` on `.github/workflows/release.yml` is a dry-run build path for checking packaging and release assets without publishing
 - Tag pushes matching `v*` run the full build, attach artifacts to a GitHub Release, and publish to PyPI
 - The PyPI publish job expects repository-side trusted publishing configuration and the `pypi` GitHub environment to be enabled before the first live release
+- For the first live release, create the PyPI pending publisher with the exact tuple `no-watermar` / `XucroYuri` / `no-watermark` / `release.yml` / `pypi`
 
 ## 6. Post-Release Follow-Up
 

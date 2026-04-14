@@ -40,6 +40,7 @@ These are still the live-release blockers:
    - The release workflow already uses OIDC-based publishing.
    - The GitHub-side `pypi` environment already exists.
    - The remaining work is on the PyPI side: create the trusted publisher entry for this repository/workflow.
+   - Browser validation on `2026-04-14` in this environment reached `https://pypi.org/account/login/?next=%2Fmanage%2Faccount%2F`, so the current Chrome session is not logged into PyPI.
 
 The repository no longer has an unresolved stable-evidence code blocker. Re-run the public synthetic fixture evidence path only if the sidecar stack or release candidate changes again before tagging.
 
@@ -54,6 +55,7 @@ Execute these steps in order:
    - Create the PyPI project if it does not exist yet.
    - Add the GitHub repository/workflow as a trusted publisher in PyPI.
    - GitHub-side environment setup is already done; do not repeat it unless the repository is recreated.
+   - Use the exact PyPI pending-publisher values listed below; do not guess workflow identifiers.
 3. Run local release preflight from a clean worktree on `main`.
    - Run the release helper and confirm disposable evidence + packaging still pass.
 4. Refresh the public stable evidence only if the release candidate changed after `2026-04-14`.
@@ -71,6 +73,19 @@ Execute these steps in order:
   - run id: `24390507894`
   - successful steps included tests, disposable evidence capture, evidence packaging, build, and `twine check`
 - Repository environment `pypi` exists in GitHub and is ready for the release workflow to reference
+- The current browser session in this environment is not logged into PyPI, so the remaining publisher setup cannot be completed here without an authenticated PyPI session
+
+## Exact PyPI Trusted Publisher Values
+
+When creating the pending publisher in PyPI, use:
+
+- PyPI project name: `no-watermar`
+- Owner: `XucroYuri`
+- Repository name: `no-watermark`
+- Workflow name: `release.yml`
+- Environment name: `pypi`
+
+The matching GitHub workflow is [`.github/workflows/release.yml`](../../.github/workflows/release.yml), and the publish job already targets the `pypi` environment.
 
 ## Commands To Resume Quickly
 

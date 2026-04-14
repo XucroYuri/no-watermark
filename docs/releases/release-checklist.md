@@ -45,6 +45,12 @@
 - Create an annotated tag matching the target version
 - Draft release notes using the changelog and merged pull request summaries
 - Confirm `.github/workflows/release.yml` is ready to publish from the release tag and that the `pypi` environment is configured for trusted publishing
+- Confirm a PyPI pending publisher exists for:
+  - project `no-watermar`
+  - owner `XucroYuri`
+  - repository `no-watermark`
+  - workflow `release.yml`
+  - environment `pypi`
 
 ## Post Release
 
