@@ -8,6 +8,14 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 class ReleaseToolingTests(unittest.TestCase):
+    def test_workflows_use_node24_compatible_official_actions(self) -> None:
+        ci_workflow = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        release_workflow = (REPO_ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+
+        for content in (ci_workflow, release_workflow):
+            self.assertIn("actions/checkout@v6", content)
+            self.assertIn("actions/setup-python@v6", content)
+
     def test_ci_workflow_runs_package_build_checks(self) -> None:
         workflow_path = REPO_ROOT / ".github" / "workflows" / "ci.yml"
         content = workflow_path.read_text(encoding="utf-8")
