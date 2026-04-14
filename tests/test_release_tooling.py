@@ -41,6 +41,7 @@ class ReleaseToolingTests(unittest.TestCase):
         self.assertIn("python -m unittest discover -s tests -v", content)
         self.assertIn("python -m no_watermar.cli --help", content)
         self.assertIn("capture-disposable-evidence.py", content)
+        self.assertIn("package-evidence.py", content)
 
     def test_release_docs_reference_stable_baseline_capture(self) -> None:
         checklist = (REPO_ROOT / "docs" / "releases" / "release-checklist.md").read_text(encoding="utf-8")
@@ -56,8 +57,10 @@ class ReleaseToolingTests(unittest.TestCase):
         release_workflow = (REPO_ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
 
         self.assertIn("capture-disposable-evidence.py", ci_workflow)
+        self.assertIn("package-evidence.py", ci_workflow)
         self.assertIn("upload-artifact", ci_workflow)
         self.assertIn("capture-disposable-evidence.py", release_workflow)
+        self.assertIn("package-evidence.py", release_workflow)
         self.assertIn("disposable-evidence", release_workflow)
 
     def test_gitignore_excludes_release_build_artifacts(self) -> None:

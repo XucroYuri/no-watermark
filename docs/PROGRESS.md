@@ -108,6 +108,7 @@
 - Added `benchmark evidence` plus `capture-stable-baseline.ps1` so repeated stable benchmark runs now collapse into one release-oriented JSON and Markdown evidence bundle
 - Added a repo-native disposable benchmark fixture plus `capture-disposable-evidence.py`, and wired that sidecar-free evidence path into CI, release preflight, and release build artifacts
 - Added a `stable-public` config template, and changed the stable sidecar bootstrap path to initialize that local config automatically when `no-watermar.toml` does not exist yet
+- Added evidence zip packaging plus GitHub Release asset wiring so disposable benchmark evidence is no longer just a raw workflow directory artifact
 
 ## In Progress
 

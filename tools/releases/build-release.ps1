@@ -47,6 +47,9 @@ try {
         Invoke-Step "Capture disposable stable evidence" {
             python .\tools\benchmark\capture-disposable-evidence.py --workspace-root .\runtime\release-preflight\disposable-evidence --clean
         }
+        Invoke-Step "Package disposable evidence bundle" {
+            python .\tools\releases\package-evidence.py --evidence-root .\runtime\release-preflight\disposable-evidence\benchmarks\evidence --output-dir .\runtime\release-preflight\disposable-evidence\package --bundle-name disposable-evidence
+        }
     }
 
     Invoke-Step "Build distribution artifacts" { python -m build }

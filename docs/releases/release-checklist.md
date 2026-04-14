@@ -12,6 +12,7 @@
 - Run `python -m pip install -e .[dev]`
 - Run `powershell -ExecutionPolicy Bypass -File .\tools\releases\build-release.ps1 -CleanDist`
 - Confirm `.\runtime\release-preflight\disposable-evidence\benchmarks\evidence\latest.json` exists after the local preflight helper finishes
+- Confirm `.\runtime\release-preflight\disposable-evidence\package\*.zip` exists after the local preflight helper finishes
 - Run `python -m no_watermar.cli --help`
 - Run `python -m unittest discover -s tests -v`
 - Run `python .\benchmark.py list-providers`

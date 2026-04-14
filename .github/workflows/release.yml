@@ -31,6 +31,9 @@ jobs:
       - name: Capture disposable stable evidence
         run: |
           python ./tools/benchmark/capture-disposable-evidence.py --workspace-root ./runtime/release-disposable-evidence --clean
+      - name: Package disposable evidence bundle
+        run: |
+          python ./tools/releases/package-evidence.py --evidence-root ./runtime/release-disposable-evidence/benchmarks/evidence --output-dir ./runtime/release-disposable-evidence/package --bundle-name disposable-evidence
       - name: Build distribution artifacts
         run: |
           python -m build
@@ -46,7 +49,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: disposable-evidence
-          path: runtime/release-disposable-evidence/benchmarks/evidence/*
+          path: runtime/release-disposable-evidence/package/*
 
   github_release:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -61,10 +64,17 @@ jobs:
         with:
           name: python-dist
           path: dist
+      - name: Download disposable evidence bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: disposable-evidence
+          path: evidence
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*
+          files: |
+            dist/*
+            evidence/*
           generate_release_notes: true
 
   publish_pypi:

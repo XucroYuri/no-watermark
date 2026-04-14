@@ -47,11 +47,14 @@ jobs:
       - name: Capture disposable stable evidence
         run: |
           python ./tools/benchmark/capture-disposable-evidence.py --workspace-root ./runtime/ci-disposable-evidence --clean
+      - name: Package disposable evidence bundle
+        run: |
+          python ./tools/releases/package-evidence.py --evidence-root ./runtime/ci-disposable-evidence/benchmarks/evidence --output-dir ./runtime/ci-disposable-evidence/package --bundle-name disposable-evidence-${{ matrix.os }}
       - name: Upload disposable evidence bundle
         uses: actions/upload-artifact@v4
         with:
           name: disposable-evidence-${{ matrix.os }}
-          path: runtime/ci-disposable-evidence/benchmarks/evidence/*
+          path: runtime/ci-disposable-evidence/package/*
 
   package:
     needs: [test, disposable_evidence]
