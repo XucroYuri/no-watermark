@@ -31,7 +31,13 @@ from .benchmark_models import BenchmarkDatasetItem, MaskResult, RestoreResult
 from .detector import detect_watermarks
 from .io_utils import read_image, read_mask, write_image
 from .models import ScanItem
-from .provider_runtime import probe_current_module, probe_python_module, summarize_probe
+from .provider_runtime import (
+    probe_current_module,
+    probe_current_runtime,
+    probe_python_module,
+    probe_python_runtime,
+    summarize_probe,
+)
 from .restorer import crop_image_to_remove_corner_watermark, restore_regular_image
 
 
@@ -1184,7 +1190,7 @@ def _run_sidecar(*, python_executable: str, script_path: Path, arguments: list[s
 
 def _describe_paddleocr_runtime() -> tuple[bool, str, dict[str, Any]]:
     if _module_available("paddleocr"):
-        probe = probe_current_module("paddleocr")
+        probe = probe_current_runtime("paddleocr", required_modules=["paddle"])
         available, note = summarize_probe("PaddleOCR", probe)
         return available, note, probe
 
@@ -1202,7 +1208,7 @@ def _describe_paddleocr_runtime() -> tuple[bool, str, dict[str, Any]]:
         }
         return False, note, probe
 
-    probe = probe_python_module(python_executable, "paddleocr")
+    probe = probe_python_runtime(python_executable, "paddleocr", required_modules=["paddle"])
     available, summarized = summarize_probe("PaddleOCR", probe)
     return available, summarized, probe
 

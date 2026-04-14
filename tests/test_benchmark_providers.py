@@ -19,6 +19,7 @@ from no_watermar.benchmark_providers import (
     BrushNetRestoreProvider,
     DiffusersInpaintRestoreProvider,
     PowerPaintV21RestoreProvider,
+    _describe_paddleocr_runtime,
     list_provider_descriptors,
 )
 
@@ -365,6 +366,41 @@ class DiffusersProviderTests(unittest.TestCase):
         self.assertEqual(planned_descriptor["support_tier"], "planned")
         self.assertEqual(planned_descriptor["validated_platforms"], [])
         self.assertIsNone(planned_descriptor["recommended_entrypoint"])
+
+    def test_describe_paddleocr_runtime_requires_paddle_runtime_dependency(self) -> None:
+        with patch("no_watermar.benchmark_providers._module_available", side_effect=lambda name: name == "paddleocr"):
+            with patch(
+                "no_watermar.benchmark_providers.probe_current_runtime",
+                return_value={
+                    "ok": False,
+                    "module_name": "paddleocr",
+                    "import_target": "paddleocr",
+                    "module_found": True,
+                    "importable": False,
+                    "version": "3.4.0",
+                    "error": "PaddleOCR required dependency check failed: paddle: Module not found: paddle",
+                    "python_executable": sys.executable,
+                    "python_version": sys.version.split()[0],
+                    "dependency_probes": [
+                        {
+                            "ok": False,
+                            "module_name": "paddle",
+                            "import_target": "paddle",
+                            "module_found": False,
+                            "importable": False,
+                            "version": None,
+                            "error": "Module not found: paddle",
+                            "python_executable": sys.executable,
+                            "python_version": sys.version.split()[0],
+                        }
+                    ],
+                },
+            ):
+                available, note, probe = _describe_paddleocr_runtime()
+
+        self.assertFalse(available)
+        self.assertIn("paddle", note.lower())
+        self.assertEqual(probe["dependency_probes"][0]["module_name"], "paddle")
 
 
 if __name__ == "__main__":

@@ -9,6 +9,21 @@ from pathlib import Path
 from typing import Any
 
 
+def probe_current_runtime(
+    module_name: str,
+    *,
+    import_target: str | None = None,
+    required_modules: list[str] | tuple[str, ...] | None = None,
+) -> dict[str, Any]:
+    primary_probe = probe_current_module(module_name, import_target=import_target)
+    if not primary_probe.get("ok"):
+        primary_probe["dependency_probes"] = []
+        return primary_probe
+
+    dependency_probes = [probe_current_module(required_module) for required_module in (required_modules or [])]
+    return _merge_runtime_dependency_probes(primary_probe, dependency_probes)
+
+
 def probe_current_module(module_name: str, *, import_target: str | None = None) -> dict[str, Any]:
     if import_target is None:
         import_target = module_name
@@ -205,6 +220,31 @@ def probe_python_module(
     return payload
 
 
+def probe_python_runtime(
+    python_executable: str | Path,
+    module_name: str,
+    *,
+    import_target: str | None = None,
+    required_modules: list[str] | tuple[str, ...] | None = None,
+    timeout_ms: int = 20000,
+) -> dict[str, Any]:
+    primary_probe = probe_python_module(
+        python_executable,
+        module_name,
+        import_target=import_target,
+        timeout_ms=timeout_ms,
+    )
+    if not primary_probe.get("ok"):
+        primary_probe["dependency_probes"] = []
+        return primary_probe
+
+    dependency_probes = [
+        probe_python_module(python_executable, required_module, timeout_ms=timeout_ms)
+        for required_module in (required_modules or [])
+    ]
+    return _merge_runtime_dependency_probes(primary_probe, dependency_probes)
+
+
 def summarize_probe(prefix: str, probe: dict[str, Any]) -> tuple[bool, str]:
     if probe.get("ok"):
         version = probe.get("version")
@@ -215,3 +255,22 @@ def summarize_probe(prefix: str, probe: dict[str, Any]) -> tuple[bool, str]:
         return False, f"{prefix} is unavailable: {probe.get('error')}"
 
     return False, f"{prefix} failed to import via {probe.get('python_executable')}: {probe.get('error')}"
+
+
+def _merge_runtime_dependency_probes(
+    primary_probe: dict[str, Any],
+    dependency_probes: list[dict[str, Any]],
+) -> dict[str, Any]:
+    merged_probe = dict(primary_probe)
+    merged_probe["dependency_probes"] = dependency_probes
+    failing_dependency = next((probe for probe in dependency_probes if not probe.get("ok")), None)
+    if failing_dependency is None:
+        return merged_probe
+
+    merged_probe["ok"] = False
+    merged_probe["importable"] = False
+    merged_probe["error"] = (
+        f"{primary_probe.get('module_name')} required dependency check failed: "
+        f"{failing_dependency.get('module_name')}: {failing_dependency.get('error')}"
+    )
+    return merged_probe
