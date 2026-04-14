@@ -48,6 +48,7 @@ if ($StableOnly) {
 
 foreach ($target in $targets) {
     $configured = [Environment]::GetEnvironmentVariable($target.EnvVar, "Process")
+    $configuredFromProcessEnv = -not [string]::IsNullOrWhiteSpace($configured)
     if ([string]::IsNullOrWhiteSpace($configured)) {
         $configured = $target.DefaultPath
     }
@@ -56,6 +57,10 @@ foreach ($target in $targets) {
     $status = if ($exists) { "FOUND" } else { "MISSING" }
     Write-Output "$status $($target.Name) $configured"
     Write-Output "EXPORT `$env:$($target.EnvVar) = `"$configured`""
+
+    if ($exists -and -not $configuredFromProcessEnv) {
+        [Environment]::SetEnvironmentVariable($target.EnvVar, $configured, "Process")
+    }
 }
 
 if ($RunProbe) {

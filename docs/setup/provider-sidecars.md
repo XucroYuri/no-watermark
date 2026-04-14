@@ -66,6 +66,8 @@ That validation path surfaces:
 - `stable_setup.optional_issues`
 - the exact next commands for stable bootstrap, validation, and release smoke
 
+When the caller has not exported the stable sidecar paths yet, `validate-sidecars.ps1` now injects any existing default `.venvs\...\Scripts\python.exe` paths into its `probe-providers` and `providers doctor` subprocesses automatically. That keeps the default stable bootstrap path usable without a separate manual export step.
+
 When one provider needs a different base interpreter, override it explicitly during bootstrap:
 
 ```powershell
