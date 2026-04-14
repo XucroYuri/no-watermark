@@ -4,6 +4,7 @@ This directory contains the release governance for `no-watermar`.
 
 ## Documents
 
+- [Agent Handoff](./agent-handoff.md)
 - [Release Checklist](./release-checklist.md)
 - [Versioning Policy](./versioning-policy.md)
 - [Release Process](./release-process.md)
