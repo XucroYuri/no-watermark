@@ -50,3 +50,4 @@ $tmp/
 .claude/
 .omc/
 .omx/
+model_store.py

@@ -13,6 +13,11 @@ from PIL import Image, ImageFilter
 
 from .config import get_watermark_keyword_settings
 from .detector import detect_watermarks
+from .model_store import (
+    download_hf_repo_snapshot,
+    resolve_diffusers_model_store_dir,
+    using_hf_project_store,
+)
 from .models import ScanItem
 
 _BRUSHNET_PIPELINE_CACHE: dict[tuple[str, ...], dict[str, Any]] = {}
@@ -565,6 +570,7 @@ def restore_with_diffusers_inpaint(
             "engine": engine_name,
             "model_id": model_id,
             "model_source": model_source,
+            "requested_model_id": resolved_options.get("requested_model_id", model_id),
             "load_mode": load_mode,
             "pipeline_class": pipeline_class_name,
             "device": device,
@@ -1430,6 +1436,11 @@ def _load_diffusers_inpaint_pipeline(
     local_files_only = bool(resolved_options.get("local_files_only", False))
     use_safetensors = bool(resolved_options.get("use_safetensors", True))
     pipeline_class_name = _read_optional_string_option(resolved_options, "pipeline_class")
+    requested_model_id = model_id
+    hf_endpoint = _read_optional_string_option(resolved_options, "hf_endpoint") or os.getenv("HF_ENDPOINT")
+    model_store_dir = resolve_diffusers_model_store_dir(
+        _read_optional_string_option(resolved_options, "model_store_dir")
+    )
     pretrained_pipeline_class_map = {
         "AutoPipelineForInpainting": AutoPipelineForInpainting,
         "FluxFillPipeline": FluxFillPipeline,
@@ -1448,15 +1459,32 @@ def _load_diffusers_inpaint_pipeline(
             pipeline_class = AutoPipelineForInpainting
             pipeline_class_name = "AutoPipelineForInpainting"
 
-        pipeline = pipeline_class.from_pretrained(
-            model_id,
-            torch_dtype=torch_dtype,
-            variant=_read_optional_string_option(resolved_options, "variant"),
-            revision=_read_optional_string_option(resolved_options, "revision"),
-            local_files_only=local_files_only,
-            use_safetensors=use_safetensors,
-        )
-        return pipeline, "diffusers_autopipeline", load_mode, pipeline_class_name, model_id
+        resolved_model_source = model_id
+        if not local_files_only and not Path(model_id).exists():
+            from huggingface_hub import snapshot_download
+
+            resolved_model_source = str(
+                download_hf_repo_snapshot(
+                    repo_id=model_id,
+                    model_store_dir=model_store_dir,
+                    endpoint=hf_endpoint,
+                    snapshot_download=snapshot_download,
+                )
+            )
+
+        with using_hf_project_store(model_store_dir, endpoint=hf_endpoint):
+            pipeline = pipeline_class.from_pretrained(
+                resolved_model_source,
+                torch_dtype=torch_dtype,
+                variant=_read_optional_string_option(resolved_options, "variant"),
+                revision=_read_optional_string_option(resolved_options, "revision"),
+                local_files_only=local_files_only or resolved_model_source != model_id,
+                use_safetensors=use_safetensors,
+            )
+        if resolved_model_source != requested_model_id:
+            resolved_options.setdefault("requested_model_id", requested_model_id)
+            resolved_options.setdefault("model_store_dir", str(model_store_dir))
+        return pipeline, "diffusers_autopipeline", load_mode, pipeline_class_name, resolved_model_source
 
     if load_mode != "single_file":
         raise ValueError(f"Unsupported diffusers load_mode option: {load_mode}")
@@ -1494,7 +1522,8 @@ def _load_diffusers_inpaint_pipeline(
     if "extract_ema" in resolved_options:
         single_file_kwargs["extract_ema"] = bool(resolved_options["extract_ema"])
 
-    pipeline = pipeline_class.from_single_file(model_source, **single_file_kwargs)
+    with using_hf_project_store(model_store_dir, endpoint=hf_endpoint):
+        pipeline = pipeline_class.from_single_file(model_source, **single_file_kwargs)
     return pipeline, "diffusers_single_file", load_mode, pipeline_class_name, model_source
 
 

@@ -309,8 +309,24 @@ class ProviderWorkersTests(unittest.TestCase):
         fake_diffusers.StableDiffusionInpaintPipeline = object()
         fake_diffusers.StableDiffusionXLInpaintPipeline = object()
         fake_diffusers.FluxFillPipeline = FakeFluxFillPipelineClass
+        fake_huggingface_hub = types.ModuleType("huggingface_hub")
 
-        with patch.dict(sys.modules, {"torch": fake_torch, "diffusers": fake_diffusers}):
+        def fake_snapshot_download(**kwargs):
+            target = Path(tempfile.mkdtemp()) / "model"
+            target.mkdir(parents=True, exist_ok=True)
+            (target / "model_index.json").write_text("{}", encoding="utf-8")
+            return str(target)
+
+        fake_huggingface_hub.snapshot_download = fake_snapshot_download
+
+        with patch.dict(
+            sys.modules,
+            {
+                "torch": fake_torch,
+                "diffusers": fake_diffusers,
+                "huggingface_hub": fake_huggingface_hub,
+            },
+        ):
             payload = restore_with_diffusers_inpaint(
                 image,
                 mask,
@@ -336,7 +352,7 @@ class ProviderWorkersTests(unittest.TestCase):
         self.assertEqual(payload["meta"]["torch_dtype"], "bfloat16")
         self.assertEqual(payload["meta"]["layerwise_casting"]["storage_dtype"], "float8_e4m3fn")
         self.assertEqual(payload["meta"]["layerwise_casting"]["compute_dtype"], "bfloat16")
-        self.assertEqual(FakeFluxFillPipelineClass.last_source, "black-forest-labs/FLUX.1-Fill-dev")
+        self.assertTrue(FakeFluxFillPipelineClass.last_source.endswith("black-forest-labs--FLUX.1-Fill-dev"))
         self.assertEqual(FakeFluxFillPipelineClass.last_kwargs["torch_dtype"], "bfloat16")
         self.assertEqual(FakeFluxFillPipelineClass.last_pipeline.transformer.layerwise_kwargs["storage_dtype"], "float8_e4m3fn")
         self.assertEqual(FakeFluxFillPipelineClass.last_pipeline.transformer.layerwise_kwargs["compute_dtype"], "bfloat16")
@@ -344,6 +360,110 @@ class ProviderWorkersTests(unittest.TestCase):
         self.assertEqual(FakeFluxFillPipelineClass.last_pipeline.called_with["width"], 40)
         self.assertEqual(FakeFluxFillPipelineClass.last_pipeline.called_with["max_sequence_length"], 256)
         self.assertNotIn("strength", FakeFluxFillPipelineClass.last_pipeline.called_with)
+
+    def test_restore_with_diffusers_inpaint_downloads_repo_to_project_model_store(self) -> None:
+        image = np.full((48, 40, 3), 128, dtype=np.uint8)
+        mask = np.zeros((48, 40), dtype=np.uint8)
+        mask[8:24, 6:18] = 255
+
+        class FakeGenerator:
+            def __init__(self, device: str) -> None:
+                self.device = device
+
+            def manual_seed(self, seed: int) -> "FakeGenerator":
+                return self
+
+        class FakeCuda:
+            @staticmethod
+            def is_available() -> bool:
+                return False
+
+            @staticmethod
+            def empty_cache() -> None:
+                return None
+
+        class FakePipeline:
+            def __init__(self) -> None:
+                self.device = None
+                self.called_with = None
+
+            def enable_attention_slicing(self) -> None:
+                return None
+
+            def to(self, device: str) -> "FakePipeline":
+                self.device = device
+                return self
+
+            def __call__(self, **kwargs):
+                self.called_with = kwargs
+                return types.SimpleNamespace(images=[kwargs["image"].convert("RGB")])
+
+        class FakeFluxFillPipelineClass:
+            last_source = None
+            last_kwargs = None
+            last_pipeline = None
+
+            @classmethod
+            def from_pretrained(cls, source: str, **kwargs):
+                cls.last_source = source
+                cls.last_kwargs = kwargs
+                cls.last_pipeline = FakePipeline()
+                return cls.last_pipeline
+
+        fake_torch = types.ModuleType("torch")
+        fake_torch.float16 = "float16"
+        fake_torch.float32 = "float32"
+        fake_torch.bfloat16 = "bfloat16"
+        fake_torch.cuda = FakeCuda()
+        fake_torch.Generator = FakeGenerator
+
+        fake_diffusers = types.ModuleType("diffusers")
+        fake_diffusers.AutoPipelineForInpainting = FakeFluxFillPipelineClass
+        fake_diffusers.StableDiffusionInpaintPipeline = object()
+        fake_diffusers.StableDiffusionXLInpaintPipeline = object()
+        fake_diffusers.FluxFillPipeline = object()
+
+        fake_huggingface_hub = types.ModuleType("huggingface_hub")
+        captured_download = {}
+
+        def fake_snapshot_download(**kwargs):
+            captured_download.update(kwargs)
+            target = Path(kwargs["local_dir"])
+            target.mkdir(parents=True, exist_ok=True)
+            (target / "model_index.json").write_text("{}", encoding="utf-8")
+            return str(target)
+
+        fake_huggingface_hub.snapshot_download = fake_snapshot_download
+
+        with patch.dict(
+            sys.modules,
+            {
+                "torch": fake_torch,
+                "diffusers": fake_diffusers,
+                "huggingface_hub": fake_huggingface_hub,
+            },
+        ):
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                payload = restore_with_diffusers_inpaint(
+                    image,
+                    mask,
+                    prompt="restore texture",
+                    options={
+                        "model_id": "black-forest-labs/FLUX.1-Fill-dev",
+                        "pipeline_class": "AutoPipelineForInpainting",
+                        "device": "cpu",
+                        "torch_dtype": "bfloat16",
+                        "model_store_dir": str(Path(tmp_dir) / ".no-watermar" / "models" / "diffusers"),
+                    },
+                )
+
+        self.assertEqual(payload["meta"]["engine"], "diffusers_autopipeline")
+        self.assertEqual(payload["meta"]["requested_model_id"], "black-forest-labs/FLUX.1-Fill-dev")
+        self.assertTrue(FakeFluxFillPipelineClass.last_source.endswith("black-forest-labs--FLUX.1-Fill-dev"))
+        self.assertTrue(FakeFluxFillPipelineClass.last_kwargs["local_files_only"])
+        self.assertEqual(captured_download["repo_id"], "black-forest-labs/FLUX.1-Fill-dev")
+        self.assertTrue(captured_download["local_dir"].endswith("black-forest-labs--FLUX.1-Fill-dev"))
+        self.assertIn(".no-watermar", captured_download["cache_dir"])
 
     def test_restore_with_diffusers_inpaint_supports_flux_fill_single_file_mode(self) -> None:
         image = np.full((48, 40, 3), 128, dtype=np.uint8)
