@@ -306,3 +306,8 @@ The immediate priorities are:
 ## Authorized Use
 
 Use the framework only for images and assets you are authorized to process.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=XucroYuri/no-watermark&type=Date)](https://star-history.com/#XucroYuri/no-watermark&Date)
+
