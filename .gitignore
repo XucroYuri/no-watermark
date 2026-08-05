@@ -51,3 +51,10 @@ $tmp/
 .omc/
 .omx/
 model_store.py
+
+# AI agent config
+.claude/
+!.claude/settings.json
+.omc/
+!.omc/skills/
+!.omc/skills/*.md
